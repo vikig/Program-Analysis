@@ -1,5 +1,10 @@
 program
 a:=10;
+b:=5;
+while a>5 do
+c:=a;
+skip;
+od
 b:=1;
 end
 
