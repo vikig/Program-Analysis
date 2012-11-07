@@ -6,9 +6,6 @@ import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
 
 
-flowGraph :: Gr Action ()
-flowGraph = empty
-
 data Action = 
 	Assign {	
 	identifier 	:: Identifier,
@@ -42,7 +39,6 @@ data Action =
 	deriving(Show, Eq)	
 
 
-
 main :: IO ()
 main = do
 	inStr <- getContents
@@ -53,10 +49,9 @@ main = do
 	let (vertexList,edgeList,_) = recursiveFG statementList [] [] 1	1
 	putStrLn ("V: " ++ show(vertexList))
 	putStrLn ("E: " ++ show(edgeList))	
-	let flowGraph' :: Gr Action () = mkGraph vertexList edgeList    
-	putStrLn("Flow Graph: " ++ show(flowGraph'))
+	let flowGraph :: Gr Action () = mkGraph vertexList edgeList    
+	putStrLn("Flow Graph: " ++ show(flowGraph))
 	print "done"
-
 
 getAction :: Stmt -> Action
 getAction (StmtAssign i e) = Assign {identifier=i, value=e} 
@@ -67,19 +62,6 @@ getAction (StmtRead i) = ReadAct {variable=i}
 getAction (StmtReadArray a i) = ReadArray {arrayname=a, index=i}
 getAction (StmtWrite i) = WriteAct {aexpr=i}
 getAction (StmtWhile b sl) = BooleanAct {boolean=b}
-
--- create graph takes a list of LabelStatement and a Graph and an Integer and returns a Graph
-createGraph :: [Action] -> Gr Action () -> Int -> Gr Action ()
-createGraph (x:xs) g 1 = createGraph xs (([],1,x,[]) & g) 2
-createGraph (x:xs) g n = createGraph xs (([((),	(n-1))],n,x,[]) & g) (n+1) 
-createGraph [] g n = g
-
-headStatement :: StmtList -> Stmt
-headStatement (StmtList stmt stmtList) = stmt 
-
-tailStatement :: StmtList -> StmtList
-tailStatement (StmtList stmt stmtList) = stmtList
-tailStatement NoStmt = NoStmt
 
 createEdgeList :: Node -> Node -> [UEdge]
 createEdgeList 1 1 = []
@@ -107,17 +89,5 @@ recursiveFG (StmtList stmt stmtlist) vertexList edgeList lc edgeHead =
  		
 	in	g
 
-recursiveFG NoStmt vertexList edgeList lc edgeHead = (vertexList, edgeList, lc) 
-		
-			 
-
-
-
--- takes a StmtList and returns a list of LabelStatements
---parseStmtList :: StmtList -> [LabelStatement]
---parseStmtList (StmtList stmt stmtList) = parseStmt(stmt):parseStmtList(stmtList)
---parseStmtList (NoStmt) = []
---parseStmt :: Stmt -> LabelStatement
---parseStmt (StmtAssign i a) = SAssign {identifier=i, aexpr=a}
-
+recursiveFG NoStmt vertexList edgeList lc edgeHead = (vertexList, edgeList, lc)
 
