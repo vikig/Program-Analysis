@@ -55,11 +55,11 @@ Program		: "program" DeclBody StmtList "end"	{Program $2 $3}
 DeclBody	: 		{EmptyDeclBody}
 		| DeclList	{DeclBody $1}
 
-DeclList 	: Decl		{SingleDecl $1}
+DeclList 	: Decl		{DeclList $1 NoDecl}
 		| Decl DeclList {DeclList $1 $2} 
 
 Decl 		: "int" identifier ";"	{Decl $2}
-		| "int" identifier "[" Aexpr "]" ";" {DeclArray $2 $4}
+		| "int" identifier "[" integer_literal "]" ";" {DeclArray $2 $4}
 
 StmtList	: Stmt		{StmtList $1 NoStmt}
 		| Stmt StmtList {StmtList $1 $2}		
@@ -120,13 +120,12 @@ data DeclBody
 
 data DeclList
 	= DeclList Decl DeclList
-	| SingleDecl Decl
 	| NoDecl
 	deriving(Show, Eq)
 
 data Decl
 	= Decl Identifier
-	| DeclArray Identifier Aexpr
+	| DeclArray Identifier IntegerLiteral
 	deriving(Show, Eq)
 
 data StmtList
@@ -200,8 +199,11 @@ getTree :: String -> Program
 getTree s = testpar (alexScanTokens s)
 
 getStmtList :: Program -> StmtList
-getStmtList (Program decl stmt) = stmt
+getStmtList (Program _ stmt) = stmt
 
+getDeclList :: Program -> DeclList
+getDeclList (Program (DeclBody decl) _) = decl
+getDeclList (Program (EmptyDeclBody) _) = NoDecl 
 
 getStmt (StmtList stmt stmtlist) = (stmt, stmtlist)
 

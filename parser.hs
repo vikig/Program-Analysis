@@ -253,18 +253,9 @@ action_40 _ = happyReduce_1
 
 action_41 _ = happyReduce_6
 
-action_42 (28) = happyShift action_25
-action_42 (32) = happyShift action_26
-action_42 (54) = happyShift action_27
-action_42 (55) = happyShift action_28
-action_42 (10) = happyGoto action_43
-action_42 (11) = happyGoto action_22
-action_42 (12) = happyGoto action_23
-action_42 (13) = happyGoto action_24
+action_42 (54) = happyShift action_43
 action_42 _ = happyFail
 
-action_43 (27) = happyShift action_57
-action_43 (28) = happyShift action_58
 action_43 (37) = happyShift action_89
 action_43 _ = happyFail
 
@@ -607,7 +598,7 @@ happyReduction_3 _  = notHappyAtAll
 happyReduce_4 = happySpecReduce_1  6 happyReduction_4
 happyReduction_4 (HappyAbsSyn7  happy_var_1)
 	 =  HappyAbsSyn6
-		 (SingleDecl happy_var_1
+		 (DeclList happy_var_1 NoDecl
 	)
 happyReduction_4 _  = notHappyAtAll 
 
@@ -631,7 +622,7 @@ happyReduction_6 _ _ _  = notHappyAtAll
 happyReduce_7 = happyReduce 6 7 happyReduction_7
 happyReduction_7 (_ `HappyStk`
 	_ `HappyStk`
-	(HappyAbsSyn10  happy_var_4) `HappyStk`
+	(HappyTerminal (INTLITERAL happy_var_4)) `HappyStk`
 	_ `HappyStk`
 	(HappyTerminal (IDENTIFIER happy_var_2)) `HappyStk`
 	_ `HappyStk`
@@ -1040,13 +1031,12 @@ data DeclBody
 
 data DeclList
 	= DeclList Decl DeclList
-	| SingleDecl Decl
 	| NoDecl
 	deriving(Show, Eq)
 
 data Decl
 	= Decl Identifier
-	| DeclArray Identifier Aexpr
+	| DeclArray Identifier IntegerLiteral
 	deriving(Show, Eq)
 
 data StmtList
@@ -1120,8 +1110,11 @@ getTree :: String -> Program
 getTree s = testpar (alexScanTokens s)
 
 getStmtList :: Program -> StmtList
-getStmtList (Program decl stmt) = stmt
+getStmtList (Program _ stmt) = stmt
 
+getDeclList :: Program -> DeclList
+getDeclList (Program (DeclBody decl) _) = decl
+getDeclList (Program (EmptyDeclBody) _) = NoDecl 
 
 getStmt (StmtList stmt stmtlist) = (stmt, stmtlist)
 

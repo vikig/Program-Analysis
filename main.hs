@@ -44,9 +44,11 @@ main = do
 	inStr <- getContents
 	let parseTree = testpar (alexScanTokens inStr)
 	let statementList = getStmtList(parseTree)
+	let declList = getDeclList(parseTree)	
+	let mergedList = mergeStmtDecl declList statementList  	
 	putStrLn ("Parse Tree: " ++ show(parseTree))
-	putStrLn ("Statement List: " ++ show(statementList))
-	let (vertexList,edgeList,_) = recursiveFG statementList [] [] 1	1
+	putStrLn ("Statement List: " ++ show(mergedList))
+	let (vertexList,edgeList,_) = recursiveFG mergedList [] [] 1 1
 	putStrLn ("V: " ++ show(vertexList))
 	putStrLn ("E: " ++ show(edgeList))	
 	let flowGraph :: Gr Action () = mkGraph vertexList edgeList    
@@ -66,6 +68,26 @@ getAction (StmtWhile b sl) = BooleanAct {boolean=b}
 createEdgeList :: Node -> Node -> [UEdge]
 createEdgeList 1 1 = []
 createEdgeList edgeHead lc = [(edgeHead, lc, ())]
+
+mergeStmtDecl :: DeclList -> StmtList -> StmtList
+mergeStmtDecl (DeclList (DeclArray i 1) declList) sl = 
+		let 	s :: Stmt = StmtAssignArray i (Aexpr1(Aexpr2(Aexpr3 (IntegerLiteral 0)))) (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral 0))))
+			sl' :: StmtList = mergeStmtDecl declList sl
+			r = StmtList s sl'		
+		in r
+mergeStmtDecl (DeclList (DeclArray i a) declList) sl = 
+		let 	s :: Stmt = StmtAssignArray i (Aexpr1(Aexpr2(Aexpr3 (IntegerLiteral (a-1))))) (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral 0))))
+			sl' :: StmtList = mergeStmtDecl (DeclList (DeclArray i (a-1)) declList) sl
+			r = StmtList s sl'		
+		in r
+mergeStmtDecl (DeclList (Decl i) declList) sl = 
+		let 	s :: Stmt = StmtAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral 0))))
+			sl' :: StmtList = mergeStmtDecl declList sl
+			r = StmtList s sl'		
+		in r
+
+mergeStmtDecl NoDecl sl = sl 
+  
 
 recursiveFG :: StmtList -> [(Node, Action)] -> [UEdge] -> Node -> Node -> ([(Node, Action)],[UEdge],Node)
 recursiveFG (StmtList (StmtWhile bexpr stmtlist') stmtlist) vertexList edgeList lc edgeHead = 
