@@ -80,6 +80,26 @@ recursiveFG (StmtList (StmtWhile bexpr stmtlist') stmtlist) vertexList edgeList 
  		
 	in	g
 
+recursiveFG (StmtList (StmtIf bexpr thenStmtList elseStmtList) NoStmt) vertexList edgeList lc edgeHead =
+	let	
+		-- Build the sub graph from StmtIf
+		(newVertexList, newEdgeList, lc1, lc2) = stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHead
+		-- Return the graph from newVertextList, newEdgeList
+		g = recursiveFG NoStmt newVertexList newEdgeList lc2 (lc2 - 1)
+		
+	in 	g
+
+recursiveFG (StmtList (StmtIf bexpr thenStmtList elseStmtList) stmtList) vertexList edgeList lc edgeHead =
+	let	
+		-- Build the sub graph from StmtIf
+		(newVertexList, newEdgeList, lc1, lc2) = stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHead
+		-- Create the edge from the last "then" stmt to the stmtList
+		newEdge = createEdgeList (lc1 - 1) lc2
+		-- Build the graph from the stmtList, consider the last "else" stmt to be the edgeHead
+		g = recursiveFG stmtList newVertexList (newEdgeList ++ newEdge) lc2 (lc2 - 1)
+		
+	in 	g
+
 recursiveFG (StmtList stmt stmtlist) vertexList edgeList lc edgeHead = 
 	let 	action = getAction(stmt)		
 		newVertexList = vertexList ++ [(lc, action)]
@@ -90,4 +110,20 @@ recursiveFG (StmtList stmt stmtlist) vertexList edgeList lc edgeHead =
 	in	g
 
 recursiveFG NoStmt vertexList edgeList lc edgeHead = (vertexList, edgeList, lc)
+
+stmtIfFG :: Stmt -> [(Node, Action)] -> [UEdge] -> Node -> Node -> ([(Node, Action)],[UEdge],Node,Node)
+stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHead =
+	let	-- Add the node of bexpr and the edge of this node and the last node in the graph
+		action = getAction(StmtIf bexpr thenStmtList elseStmtList)
+		newVertexList = vertexList ++ [(lc, action)]
+		newEdge = createEdgeList edgeHead lc		
+		newEdgeList = edgeList ++ newEdge
+		-- Build the graph from then "then" stmtList
+		(newVertexList1, newEdgeList1, lc1) = recursiveFG thenStmtList newVertexList newEdgeList (lc+1) lc 		
+		-- Build the graph from the "else" stmtList
+		(newVertexList2, newEdgeList2, lc2) = recursiveFG elseStmtList newVertexList1 newEdgeList1 lc1 lc 	
+		g = (newVertexList2, newEdgeList2, lc1, lc2)
+		
+	in 	g 
+		
 
