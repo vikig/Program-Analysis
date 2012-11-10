@@ -1,15 +1,14 @@
 program
-a:=10;
-b:=5;
-while a>5 do
-c:=a;
-skip;
-od
 b:=1;
 if b<2
-	then a:=a*2;
-		 c:=a;
-	else a:=a/2;
+	then 
+		if a=1 
+			then a:=1; 
+		else 
+			skip; 
+		fi
+	else 
+		a:=a/2;
 fi
 b:=3;
 end

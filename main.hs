@@ -4,6 +4,25 @@ import Parser
 import Scanner
 import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
+import Data.Set (Set)
+import qualified Data.Set as Set
+
+type Label = Int
+
+data MonFramework = Lattice Functions Flow (Set Label) ExtVal TransFunct
+
+data Lattice = 
+	RD (Set (Identifier, Label)) Subset
+
+data Flow = 
+	RD (Set UEdge)
+
+data ExtVal = 
+	RD (Identifier -1) -- this should map all the variables to -1
+
+data TransFunct =
+	RD ((Identifier, Label) -> (Identifier, Label))
+
 
 
 data Action = 
@@ -44,7 +63,6 @@ main = do
 	inStr <- getContents
 	let parseTree = testpar (alexScanTokens inStr)
 	let statementList = getStmtList(parseTree)
-	let declList = getDeclList(parseTree)	
 	let mergedList = mergeStmtDecl declList statementList  	
 	putStrLn ("Parse Tree: " ++ show(parseTree))
 	putStrLn ("Statement List: " ++ show(mergedList))
