@@ -2,66 +2,22 @@ module Main where
 
 import Parser
 import Scanner
+import FlowGraph
+import Datatypes
+import RD
+
 import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
 import Data.Set (Set)
+import Data.List
 import qualified Data.Set as Set
-
-type Label = Int
-
-data MonFramework = Lattice Functions Flow (Set Label) ExtVal TransFunct
-
-data Lattice = 
-	RD (Set (Identifier, Label)) Subset
-
-data Flow = 
-	RD (Set UEdge)
-
-data ExtVal = 
-	RD (Identifier -1) -- this should map all the variables to -1
-
-data TransFunct =
-	RD ((Identifier, Label) -> (Identifier, Label))
-
-
-
-data Action = 
-	Assign {	
-	identifier 	:: Identifier,
-	value		:: Aexpr
-	}
-	|
-	ArrayAssign {	
-	arrayname 	:: Identifier,
-	index		:: Aexpr,
-	value 		:: Aexpr
-	}
-	|
-	BooleanAct {
-	boolean		:: Bexpr
-	}
-	|
-	WriteAct {
-	aexpr	:: Aexpr
-	}
-	|
-	ReadAct {
-	variable	:: Identifier
-	}
-	|	
-	ReadArray {
-	arrayname 	:: Identifier,
-	index		:: Aexpr	 
-	}
-	|
-	Skip	
-	deriving(Show, Eq)	
 
 
 main :: IO ()
 main = do
 	inStr <- getContents
 	let parseTree = testpar (alexScanTokens inStr)
+	let declList = getDeclList(parseTree)	
 	let statementList = getStmtList(parseTree)
 	let mergedList = mergeStmtDecl declList statementList  	
 	putStrLn ("Parse Tree: " ++ show(parseTree))
@@ -71,99 +27,88 @@ main = do
 	putStrLn ("E: " ++ show(edgeList))	
 	let flowGraph :: Gr Action () = mkGraph vertexList edgeList    
 	putStrLn("Flow Graph: " ++ show(flowGraph))
+	let trans = [(AssignType,RDFunction),(ArrayAssignType,RDFunction),(SkipType,NoOp),(BooleanActType,NoOp)]
+	let extval = RDExtVal
+	let bottom = RDanalysis (Set.empty)
+	let ianalysis = worklistInit vertexList [1] extval bottom
+	putStrLn("Initial analysis: " ++ show(ianalysis)) 
+	let fanalysis = worklistWork edgeList ianalysis trans flowGraph
+	putStrLn("Final entry analysis: " ++ show(fanalysis))
+	let fxanalysis = getExitAnalysis (nodes flowGraph) fanalysis trans flowGraph	
+	putStrLn("Final exit analysis: " ++ show(fxanalysis))
+	
 	print "done"
 
-getAction :: Stmt -> Action
-getAction (StmtAssign i e) = Assign {identifier=i, value=e} 
-getAction (StmtAssignArray i n e) = ArrayAssign {arrayname=i, index=n, value=e}
-getAction (StmtSkip) = Skip
-getAction (StmtIf b sl1 sl2) = BooleanAct {boolean=b}
-getAction (StmtRead i) = ReadAct {variable=i}
-getAction (StmtReadArray a i) = ReadArray {arrayname=a, index=i}
-getAction (StmtWrite i) = WriteAct {aexpr=i}
-getAction (StmtWhile b sl) = BooleanAct {boolean=b}
+extractFunction :: Maybe Function -> Function
+extractFunction (Just a) = a
+--should never match this one
+extractFunction _ = ErrorFunct 
 
-createEdgeList :: Node -> Node -> [UEdge]
-createEdgeList 1 1 = []
-createEdgeList edgeHead lc = [(edgeHead, lc, ())]
+applyFunct :: FlowGraph -> Function -> Analysis -> Label -> Analysis
+applyFunct fg RDFunction (RDanalysis set) l = RDanalysis (exitrd fg set l)
+applyFunct _ NoOp a _ = a 
+applyFunct _ _ _ _ = ErrorAnalysis	 		
 
-mergeStmtDecl :: DeclList -> StmtList -> StmtList
-mergeStmtDecl (DeclList (DeclArray i 1) declList) sl = 
-		let 	s :: Stmt = StmtAssignArray i (Aexpr1(Aexpr2(Aexpr3 (IntegerLiteral 0)))) (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral 0))))
-			sl' :: StmtList = mergeStmtDecl declList sl
-			r = StmtList s sl'		
-		in r
-mergeStmtDecl (DeclList (DeclArray i a) declList) sl = 
-		let 	s :: Stmt = StmtAssignArray i (Aexpr1(Aexpr2(Aexpr3 (IntegerLiteral (a-1))))) (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral 0))))
-			sl' :: StmtList = mergeStmtDecl (DeclList (DeclArray i (a-1)) declList) sl
-			r = StmtList s sl'		
-		in r
-mergeStmtDecl (DeclList (Decl i) declList) sl = 
-		let 	s :: Stmt = StmtAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral 0))))
-			sl' :: StmtList = mergeStmtDecl declList sl
-			r = StmtList s sl'		
-		in r
+applyTransFunct :: Label -> Analysis -> [TransFunct] -> FlowGraph -> Analysis
+applyTransFunct l a transFunct flowGraph = result
+	where
+		(_,_,action,_) = context flowGraph l
+		actionType = getActType action
+		function = extractFunction (lookup actionType transFunct)
+		result = applyFunct flowGraph function a l
 
-mergeStmtDecl NoDecl sl = sl 
-  
+applyExtVal :: ExtVal -> [(Node, Action)] -> [Analysis]
+applyExtVal (RDExtVal) vertexList = rdExtVal vertexList
+applyExtVal extval _ = [extval] 
 
-recursiveFG :: StmtList -> [(Node, Action)] -> [UEdge] -> Node -> Node -> ([(Node, Action)],[UEdge],Node)
-recursiveFG (StmtList (StmtWhile bexpr stmtlist') stmtlist) vertexList edgeList lc edgeHead = 
-	let 	action = getAction(StmtWhile bexpr stmtlist')		
-		newVertexList = vertexList ++ [(lc, action)]
-		newEdge = createEdgeList edgeHead lc		
-		newEdgeList = edgeList ++ newEdge
-		(newVertexList', newEdgeList', lc') = recursiveFG stmtlist' newVertexList newEdgeList (lc+1) lc 		
-		newEdge' = createEdgeList (lc'-1) lc
-		newEdgeList'' = newEdgeList' ++ newEdge'		
-		g = recursiveFG stmtlist newVertexList' newEdgeList'' lc' lc
- 		
-	in	g
 
-recursiveFG (StmtList (StmtIf bexpr thenStmtList elseStmtList) NoStmt) vertexList edgeList lc edgeHead =
-	let	
-		-- Build the sub graph from StmtIf
-		(newVertexList, newEdgeList, lc1, lc2) = stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHead
-		-- Return the graph from newVertextList, newEdgeList
-		g = recursiveFG NoStmt newVertexList newEdgeList lc2 (lc2 - 1)
+worklistInit :: [(Node, Action)] -> ExtLab -> ExtVal -> Bottom -> [Analysis]
+worklistInit [] _ _ _ = []
+worklistInit ((n,a):tail) extlab extval bottom = result
+	where	analysis = if elem n extlab then applyExtVal extval ((n,a):tail) else [bottom] 
+		rest = worklistInit tail extlab extval bottom
+		result = analysis ++ rest
+
+
+
 		
-	in 	g
+replaceNth :: Int -> Analysis -> [Analysis] -> [Analysis]
+replaceNth n newVal (x:xs)
+     | n == 1 = newVal:xs
+     | otherwise = x:replaceNth (n-1) newVal xs
 
-recursiveFG (StmtList (StmtIf bexpr thenStmtList elseStmtList) stmtList) vertexList edgeList lc edgeHead =
-	let	
-		-- Build the sub graph from StmtIf
-		(newVertexList, newEdgeList, lc1, lc2) = stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHead
-		-- Create the edge from the last "then" stmt to the stmtList
-		newEdge = createEdgeList (lc1 - 1) lc2
-		-- Build the graph from the stmtList, consider the last "else" stmt to be the edgeHead
-		g = recursiveFG stmtList newVertexList (newEdgeList ++ newEdge) lc2 (lc2 - 1)
-		
-	in 	g
 
-recursiveFG (StmtList stmt stmtlist) vertexList edgeList lc edgeHead = 
-	let 	action = getAction(stmt)		
-		newVertexList = vertexList ++ [(lc, action)]
-		newEdge = createEdgeList edgeHead lc		
-		newEdgeList = edgeList ++ newEdge		
-		g = recursiveFG stmtlist newVertexList newEdgeList (lc+1) lc
- 		
-	in	g
 
-recursiveFG NoStmt vertexList edgeList lc edgeHead = (vertexList, edgeList, lc)
+compareAnalysis :: Analysis -> Analysis -> Bool
+compareAnalysis (RDanalysis a1) (RDanalysis a2) =
+	if Set.isSubsetOf a1 a2 
+		then False
+		else True
 
-stmtIfFG :: Stmt -> [(Node, Action)] -> [UEdge] -> Node -> Node -> ([(Node, Action)],[UEdge],Node,Node)
-stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHead =
-	let	-- Add the node of bexpr and the edge of this node and the last node in the graph
-		action = getAction(StmtIf bexpr thenStmtList elseStmtList)
-		newVertexList = vertexList ++ [(lc, action)]
-		newEdge = createEdgeList edgeHead lc		
-		newEdgeList = edgeList ++ newEdge
-		-- Build the graph from then "then" stmtList
-		(newVertexList1, newEdgeList1, lc1) = recursiveFG thenStmtList newVertexList newEdgeList (lc+1) lc 		
-		-- Build the graph from the "else" stmtList
-		(newVertexList2, newEdgeList2, lc2) = recursiveFG elseStmtList newVertexList1 newEdgeList1 lc1 lc 	
-		g = (newVertexList2, newEdgeList2, lc1, lc2)
-		
-	in 	g 
-		
+analysisUnion :: Analysis -> Analysis -> Analysis
+analysisUnion (RDanalysis a1) (RDanalysis a2) = RDanalysis (Set.union a1 a2) 
+
+worklistWork :: Worklist -> [Analysis] -> [TransFunct] -> FlowGraph -> [Analysis]
+worklistWork [] analysis _ _ = analysis
+worklistWork ((n1,n2,()):tail) analysis trans fg = newAnalysisList
+	where 	a1=analysis!!(n1-1)
+		a2=analysis!!(n2-1)
+		a3=applyTransFunct n1 a1 trans fg
+		newElement = analysisUnion a2 a3
+		newAnalysis = replaceNth n2 newElement analysis
+		outEdges = out fg n2  				 				
+		newWorklist = Data.List.union outEdges tail	
+		newAnalysisList = if compareAnalysis a3 a2
+					then worklistWork newWorklist newAnalysis trans fg 
+					else worklistWork tail analysis trans fg
+
+getExitAnalysis :: [Label] -> [Analysis] -> [TransFunct] -> FlowGraph -> [Analysis]
+getExitAnalysis [] _ _ _ = []
+getExitAnalysis (x:xs) analysis trans fg = 
+	let	a1=analysis!!(x-1)
+		a2=applyTransFunct x a1 trans fg
+	in	[a2] ++ (getExitAnalysis xs analysis trans fg) 
+	
+
+
 
