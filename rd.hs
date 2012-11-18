@@ -9,7 +9,7 @@ import Parser
 import FlowGraph
 import Datatypes
 
-
+--Function that returns the labels where there is an assignment to the identifier
 getAssignmentLabels :: [(Label, Action)] -> Identifier -> Set (Identifier, Label)
 getAssignmentLabels [] _ = Set.empty
 getAssignmentLabels list i = u
@@ -20,7 +20,7 @@ getAssignmentLabels list i = u
 		u = Set.union h t 
 
 		
-			
+--Parsea an action into a value of the lattice			
 rdParseAction :: (Label, Action) -> Identifier -> Set (Identifier, Label)
 rdParseAction (l, (Assign i1 _)) i2 = 	
 	if 	i1==i2 
@@ -61,11 +61,7 @@ rdParseAction _ _ = u
 	where	u = Set.empty
 
 
-
-
-	
-
-
+-- the Kill function
 killrd :: [(Label, Action)] -> Action -> Label -> Set (Identifier, Label)
 
 killrd vertexList (Assign i _) l = 
@@ -101,7 +97,7 @@ killrd vertexList (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n))))) l =
 
 killrd _ _ _ = Set.empty	
 
-
+-- the gen function
 genrd :: Action -> Label -> Set (Identifier, Label)
 genrd (Assign i _) l = Set.singleton (i, l)
 genrd (ReadAct i) l = Set.singleton (i, l)
@@ -110,6 +106,7 @@ genrd (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) l = Set.singleto
 genrd _ _ = Set.empty
 
 
+-- returns the variables of the program
 fvrd :: [(Label, Action)] -> Set Identifier
 fvrd [] = Set.empty
 fvrd ((_,(Assign i v)):xs) = u
@@ -125,8 +122,11 @@ fvrd ((_,(ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) v)):xs) = u
 		u = Set.union h t
 fvrd (_:_) = Set.empty
 
+-- puts a label and an identifier into a tuple
 labelize :: Label -> Identifier -> (Identifier, Label)
 labelize l i = (i,l)
+
+-- Entry function for a label, not necessary for the worklist algorithm
 {-
 entryrd :: FlowGraph -> Label -> Set (Identifier, Label)
 entryrd fg l = 
@@ -144,12 +144,15 @@ entryrd fg l =
 			finalset = Set.unions temp
 		in	finalset
 -}
+
+-- Extracts an action from a Maybe action, used to deal with the result of the lookup function
 extractAction :: Maybe Action -> Action
 extractAction (Just a) = a
 --should never match this one
 extractAction _ = ErrorAct 
 	 
 
+--Exit analysis of a label
 exitrd :: FlowGraph -> EntryRD -> Label -> Set (Identifier, Label)
 exitrd fg entryset label = result
 	where 
@@ -160,7 +163,7 @@ exitrd fg entryset label = result
 		tempset = Set.difference entryset killset
 		result = Set.union tempset genset 	
 
-
+--Function that returns the initial analysis of the program, for every x returns (x,?) where ? is represented by -1 in our program
 rdExtVal :: [(Node, Action)] -> [Analysis]
 rdExtVal vertexList = [RDanalysis set]
 	where 	fv = fvrd vertexList

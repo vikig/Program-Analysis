@@ -1,3 +1,5 @@
+-- this file contains all the different datatypes we use for the analyzer 
+
 module Datatypes where
 
 import Data.Graph.Inductive
@@ -5,41 +7,55 @@ import Data.Graph.Inductive.Graph
 import Data.Set (Set)
 import qualified Data.Set as Set
 
+-- a FlowGraph is a Graph with Action vertex and unlabeled edges
 type FlowGraph = Gr Action ()
+-- list of vertices of the flow graph, which consist of tuples of Node (integer) and Action
 type VertexList = [(Node, Action)]
 
+-- Flow graph label
 type Label = Int
 
+-- Monotone framework flow (list of edges of the flowgraph)
 type Flow = [UEdge]
+-- Extremal Labels of the flowgraph (list of nodes)
 type ExtLab = [Node]
+-- Extremal value of the flowgraph
 type ExtVal = Analysis
+-- Bottom value of the lattice
 type Bottom = Analysis
+-- Worklist, list of edges
 type Worklist = [UEdge]
 
+-- Set of lattice values used by Reaching definitions to calculate the Exit set
 type EntryRD = Set (Identifier, Label)
 
 
 
-data Framework = MonFramework [Function] FlowGraph ExtLab ExtVal TransFunct 
+--data Framework = MonFramework [Function] FlowGraph ExtLab ExtVal TransFunct 
 
+--Functions that transfer functions map to
 data Function = 
 	RDFunction
 	|
 	NoOp
 	|
+	-- if an ActionType is not mapped by any transfer function then it is mapped to an errorfunction
 	ErrorFunct
 	deriving(Show, Eq)
+
+--Mapping from ActionType to Functions
 type TransFunct = (ActionType, Function)
 
-
+--Possible values of Analysis[x]
 data Analysis =
 	RDExtVal
 	|	
-	RDanalysis (Set (Identifier, Label))
+	RDanalysis EntryRD
 	|
 	ErrorAnalysis
 	deriving(Show, Eq)
 
+--Type of different actions
 data ActionType =
 	AssignType
 	|
@@ -65,6 +81,7 @@ getActType (ReadAct _) = ReadActType
 getActType (ReadArray _ _) = ReadArrayType
 getActType (Skip) = SkipType
 
+--Abstraction of Program statements to be put into the nodes of the flowgraph
 data Action = 
 	Assign {	
 	identifier 	:: Identifier,
@@ -100,7 +117,11 @@ data Action =
 	deriving(Show, Eq)
 
 
-
+--
+--
+-- Datatypes used by the parser
+--
+--
 data Program
 	= Program DeclBody StmtList
 	deriving(Show, Eq)
