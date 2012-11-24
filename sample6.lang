@@ -1,12 +1,12 @@
 program
-int x;
-int y[2];
-int z;
 
-x:=1;
-y[0]:=3;
-z:=3;
+x:=a+b;
+y:=a*x;
 
-skip;
+while y>a+b do
+	
+	a:=a+1;
+	x:=a+b;
+od
 
 end

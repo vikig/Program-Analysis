@@ -125,11 +125,6 @@ getDeclList (Program (EmptyDeclBody) _) = NoDecl
 
 getStmt (StmtList stmt stmtlist) = (stmt, stmtlist)
 
-try :: String -> IO ()
-try s = do
-	let parseTree = testpar (alexScanTokens s)
-	putStrLn ("parseTree: " ++ show(parseTree))
-	print "done"
 
 }
 		

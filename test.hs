@@ -5,7 +5,10 @@ import Scanner
 import FlowGraph
 import Datatypes
 import RD
-import Main
+import AE
+import Worklist
+import Reaches
+
 
 import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
@@ -13,7 +16,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 
 --test rd.hs
-
+{-
 testGetAssignmentLabels :: IO()
 testGetAssignmentLabels = do
 	let a1 = Assign "x" (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral 1))))
@@ -179,3 +182,32 @@ testWorklistWork = do
 	let fanalysis = worklistWork elist ianalysis trans fg
 	putStrLn("Final analysis: " ++ show(fanalysis))
 	print "done"
+
+-}
+
+aexprr = (Aexpr1(Aexpr2(Aexpr3(Identifier "a"))))
+aexpr11 = (Aexpr2(Aexpr3(IntegerLiteral 1)))
+aexpr12 = (Aexpr2(Aexpr3(Identifier "b")))	
+aexpr13 = (Aexpr2(Aexpr3(Identifier "a")))	
+action = Assign "a" (Plus aexprr aexpr11)
+aexpr2 = (Aexpr3(Identifier "x"))
+entryList = [((Aexpr1(Mul aexpr13 aexpr2)),2),((Plus aexprr aexpr11),1),((Plus aexprr aexpr11),5)]  
+aexprrr = Plus aexprr aexpr11	
+
+
+testExitOneAexpr :: IO()
+testExitOneAexpr = do
+	let result = exitOneAexpr action aexprrr 4 entryList
+	putStrLn("result: " ++ show(result))
+	print "done"
+
+testGetExpressionsThatContain :: IO()
+testGetExpressionsThatContain = do
+	let result = getExpressionsThatContain [(Plus aexprr aexpr11)] "a"
+	putStrLn("result: " ++ show(result))
+	print "done"
+
+
+
+
+

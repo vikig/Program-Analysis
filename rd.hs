@@ -42,7 +42,7 @@ rdParseAction (l, (ReadAct i1)) i2 =
 rdParseAction (l, (ArrayAssign i1 (Aexpr1(Aexpr2(Aexpr3 (IntegerLiteral (n))))) _)) i2 = 
 	if 	i1==i2 
 	then 	
-		let	a = i1 ++ "[" ++ show(n) ++ "]"
+		let	a = i1 ++ "[" ++ Prelude.show(n) ++ "]"
 			u = Set.singleton (a, l) 
 		in	u	
 	else	
@@ -51,7 +51,7 @@ rdParseAction (l, (ArrayAssign i1 (Aexpr1(Aexpr2(Aexpr3 (IntegerLiteral (n))))) 
 rdParseAction (l, (ReadArray i1 (Aexpr1(Aexpr2(Aexpr3 (IntegerLiteral (n))))))) i2 = 
 	if 	i1==i2 
 	then 	
-		let	a = i1 ++ "[" ++ show(n) ++ "]"
+		let	a = i1 ++ "[" ++ Prelude.show(n) ++ "]"
 			u = Set.singleton (a, l) 
 		in	u	
 	else	
@@ -72,7 +72,7 @@ killrd vertexList (Assign i _) l =
 	in	Set.difference temp minus 
 
 killrd vertexList (ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _) l = 
-	let	a = i ++ "[" ++ show(n) ++ "]"
+	let	a = i ++ "[" ++ Prelude.show(n) ++ "]"
 		h = Set.singleton (a, -1)
  		t = getAssignmentLabels vertexList a
 		temp = Set.union h t
@@ -88,7 +88,7 @@ killrd vertexList (ReadAct i) l =
 	in	Set.difference temp minus
 
 killrd vertexList (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n))))) l = 
-	let	a = i ++ "[" ++ show(n) ++ "]"
+	let	a = i ++ "[" ++ Prelude.show(n) ++ "]"
 		h = Set.singleton (a, -1)
  		t = getAssignmentLabels vertexList a
 		temp = Set.union h t
@@ -101,22 +101,22 @@ killrd _ _ _ = Set.empty
 genrd :: Action -> Label -> Set (Identifier, Label)
 genrd (Assign i _) l = Set.singleton (i, l)
 genrd (ReadAct i) l = Set.singleton (i, l)
-genrd (ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _) l = Set.singleton (i ++ "[" ++ show(n) ++ "]", l)
-genrd (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) l = Set.singleton (i ++ "[" ++ show(n) ++ "]", l)
+genrd (ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _) l = Set.singleton (i ++ "[" ++ Prelude.show(n) ++ "]", l)
+genrd (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) l = Set.singleton (i ++ "[" ++ Prelude.show(n) ++ "]", l)
 genrd _ _ = Set.empty
 
 
 -- returns the variables of the program
 fvrd :: [(Label, Action)] -> Set Identifier
 fvrd [] = Set.empty
-fvrd ((_,(Assign i v)):xs) = u
+fvrd ((_,(Assign i _)):xs) = u
 	where		
 		h = Set.singleton i
 		t = fvrd xs
 		u = Set.union h t
-fvrd ((_,(ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) v)):xs) = u
+fvrd ((_,(ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _)):xs) = u
 	where		
-		a = i ++ "[" ++ show(n) ++ "]" 
+		a = i ++ "[" ++ Prelude.show(n) ++ "]" 
 		h = Set.singleton a
 		t = fvrd xs
 		u = Set.union h t

@@ -21,20 +21,25 @@ type Flow = [UEdge]
 type ExtLab = [Node]
 -- Extremal value of the flowgraph
 type ExtVal = Analysis
--- Bottom value of the lattice
 type Bottom = Analysis
 -- Worklist, list of edges
+-- Bottom value of the lattice
 type Worklist = [UEdge]
 
 -- Set of lattice values used by Reaching definitions to calculate the Exit set
 type EntryRD = Set (Identifier, Label)
-
+type EntryAE = Set Aexpr
+type EntryReaches = Set (Aexpr, (Set Label))
 
 
 --data Framework = MonFramework [Function] FlowGraph ExtLab ExtVal TransFunct 
 
 --Functions that transfer functions map to
-data Function = 
+data Function =
+	REFunction	
+	|
+	AEFunction
+	| 
 	RDFunction
 	|
 	NoOp
@@ -47,13 +52,64 @@ data Function =
 type TransFunct = (ActionType, Function)
 
 --Possible values of Analysis[x]
-data Analysis =
-	RDExtVal
+data Analysis =	
+	AEInitVal	
 	|	
-	RDanalysis EntryRD
+	AEExtVal
+	|	
+	RDExtVal
+	|
+	REExtVal	
+	|
+	RDanalysis (Set (Identifier,Label))
+	|
+	AEanalysis (Set Aexpr)
+	|
+	REanalysis (Set (Aexpr,Label))
 	|
 	ErrorAnalysis
 	deriving(Show, Eq)
+
+showAnalysis :: [Analysis] -> Int -> String
+showAnalysis [] _ = []
+showAnalysis ((AEanalysis a):xs) int = show(int) ++ "- [" ++ showListAexpr (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((RDanalysis a):xs) int = show(int) ++ "- [" ++ showListIdLabel (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((REanalysis a):xs) int = show(int) ++ "- [" ++ showListAexprLabel (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
+
+showListAexprLabel :: [(Aexpr,Label)] -> String
+showListAexprLabel [] = []
+showListAexprLabel ((a,l):tail) = "(" ++ showAexpr(a) ++ ", " ++ show(l) ++ ")" ++ showListAexprLabel tail
+
+
+showListIdLabel :: [(Identifier,Label)] -> String
+showListIdLabel [] = []
+showListIdLabel ((i,l):tail) = "(" ++ show(i) ++ ", " ++ show(l) ++ ")" ++ showListIdLabel tail
+
+
+showListAexpr :: [Aexpr] -> String
+showListAexpr [] = []
+showListAexpr (a:tail) = "(" ++ showAexpr a ++ ")" ++ showListAexpr tail
+
+showAexpr :: Aexpr -> String
+showAexpr (Aexpr1 a1) = showAexpr1 a1
+showAexpr (Plus a a1) = showAexpr a ++ " + " ++ showAexpr1 a1
+showAexpr (Minus a a1) = showAexpr a ++ " - " ++ showAexpr1 a1
+
+showAexpr1 :: Aexpr1 -> String
+showAexpr1 (Aexpr2 a2) = showAexpr2 a2
+showAexpr1 (Mul a1 a2) = showAexpr1 a1 ++ " * " ++ showAexpr2 a2
+showAexpr1 (Div a1 a2) = showAexpr1 a1 ++ " / " ++ showAexpr2 a2
+
+showAexpr2 :: Aexpr2 -> String
+showAexpr2 (Aexpr3 a3) = showAexpr3 a3
+showAexpr2 (Neg a3) = " -" ++ showAexpr3 a3
+
+showAexpr3 :: Aexpr3 -> String
+showAexpr3 (Identifier i) = show(i)
+showAexpr3 (IntegerLiteral i) = show(i)
+showAexpr3 (IdentifierArray i a) = show(i)++"["++showAexpr(a)++"]"
+showAexpr3 (ABrack a) = "(" ++ showAexpr(a) ++ ")"
+
 
 --Type of different actions
 data ActionType =
@@ -99,7 +155,7 @@ data Action =
 	}
 	|
 	WriteAct {
-	aexpr	:: Aexpr
+	aexpr		:: Aexpr
 	}
 	|
 	ReadAct {
@@ -117,6 +173,7 @@ data Action =
 	deriving(Show, Eq)
 
 
+
 --
 --
 -- Datatypes used by the parser
@@ -125,6 +182,8 @@ data Action =
 data Program
 	= Program DeclBody StmtList
 	deriving(Show, Eq)
+
+ 
 
 data DeclBody
 	= DeclBody DeclList
@@ -161,35 +220,35 @@ data Aexpr
 	= Aexpr1 Aexpr1
 	| Plus Aexpr Aexpr1
 	| Minus Aexpr Aexpr1
-	deriving(Show, Eq)
+	deriving(Show, Eq, Ord)
 
 data Aexpr1
 	= Aexpr2 Aexpr2
 	| Mul Aexpr1 Aexpr2
 	| Div Aexpr1 Aexpr2
-	deriving(Show, Eq)
+	deriving(Show, Eq, Ord)
 
 data Aexpr2
 	= Neg Aexpr3
 	| Aexpr3 Aexpr3
-	deriving(Show, Eq)
+	deriving(Show, Eq, Ord)
 
 data Aexpr3
 	= Identifier Identifier
 	| IdentifierArray Identifier Aexpr
 	| IntegerLiteral IntegerLiteral
 	| ABrack Aexpr
-	deriving(Show, Eq)
+	deriving(Show, Eq, Ord)
 
 data Bexpr 
 	= Bexpr1 Bexpr1
 	| Or Bexpr Bexpr1
-	deriving(Show, Eq)
+	deriving(Show, Eq, Ord)
 
 data Bexpr1
 	= Bexpr2 Bexpr2
 	| And Bexpr1 Bexpr2
-	deriving(Show, Eq)
+	deriving(Show, Eq, Ord)
 
 data Bexpr2
 	= GreatThan Aexpr Aexpr
@@ -201,7 +260,7 @@ data Bexpr2
 	| Not Bexpr
 	| Boolean Boolean
 	| BBrack Bexpr
-	deriving(Show, Eq)
+	deriving(Show, Eq, Ord)
 
 type Identifier	= String
 type IntegerLiteral = Int

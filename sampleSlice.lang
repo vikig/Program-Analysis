@@ -1,0 +1,9 @@
+program
+
+x:=1;
+z:=x+3;
+while z>0 do
+	y:=2*z;
+	z:=y;
+od
+end
