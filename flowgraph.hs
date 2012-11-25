@@ -4,6 +4,7 @@ import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
 import Parser
 import Datatypes
+import Debug.Trace
 
 	
 
@@ -98,6 +99,38 @@ stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHea
 		g = (newVertexList2, newEdgeList2, lc1, lc2)
 		
 	in 	g 
+
+getEnclosingBoolean :: FlowGraph -> Node -> Int -> Node
+getEnclosingBoolean fg node ignoreBool = result
+	where
+			vertexList = labNodes fg
+			predecessor = {-trace ("calling pre with node " ++ show(node))-} (pre fg node)
+			ignoreNumber = (parsePredecessor predecessor node) + ignoreBool
+			(n,a) = {-trace ("pre: " ++ show(predecessor))-} vertexList!!((minimum predecessor)-1)			
+			result = 
+				if (predecessor == []) 
+					then 	(-1)
+					else 	if (checkIfBoolean a) 
+							then 
+								if ((ignoreNumber>0) && (length(suc fg n)==2)) 
+									then getEnclosingBoolean fg n (ignoreNumber-1) 
+									else n
+							else (getEnclosingBoolean fg n ignoreNumber)
+			
+
+parsePredecessor :: [Node] -> Node -> Int
+parsePredecessor [] _ = 0
+parsePredecessor pre node =
+	let	le = length pre
+	in	case le of
+			1 -> 0
+			2 -> if ((maximum pre)>node) then 0 else 1
+			_ -> ceiling((toRational(le))/2)
+
+checkIfBoolean :: Action -> Bool
+checkIfBoolean (BooleanAct _) = True
+checkIfBoolean _ = False
+			
 
 
 		

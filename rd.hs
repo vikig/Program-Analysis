@@ -120,7 +120,7 @@ fvrd ((_,(ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _)):xs) = u
 		h = Set.singleton a
 		t = fvrd xs
 		u = Set.union h t
-fvrd (_:_) = Set.empty
+fvrd (_:xs) = fvrd xs
 
 -- puts a label and an identifier into a tuple
 labelize :: Label -> Identifier -> (Identifier, Label)

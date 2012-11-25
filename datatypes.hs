@@ -70,6 +70,19 @@ data Analysis =
 	ErrorAnalysis
 	deriving(Show, Eq)
 
+showVertexList :: VertexList -> String
+showVertexList [] = []
+showVertexList ((i,a):tail) = show(i) ++ "- << " ++ showAction a ++ " >>\n" ++ showVertexList tail
+
+showAction :: Action -> String
+showAction (Assign i a) = i ++ " := " ++ showAexpr(a)
+showAction (ArrayAssign i a v) = i ++ "[" ++ showAexpr(a) ++ "] := " ++ showAexpr(v)
+showAction (BooleanAct b) = showBexpr b
+showAction (WriteAct a) = "write " ++ showAexpr a
+showAction (ReadAct i) = "read " ++ i
+showAction (ReadArray i a) = "read " ++ i ++"["++ showAexpr a ++"]"  
+showAction Skip = "skip"
+
 showAnalysis :: [Analysis] -> Int -> String
 showAnalysis [] _ = []
 showAnalysis ((AEanalysis a):xs) int = show(int) ++ "- [" ++ showListAexpr (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
@@ -83,12 +96,12 @@ showListAexprLabel ((a,l):tail) = "(" ++ showAexpr(a) ++ ", " ++ show(l) ++ ")" 
 
 showListIdLabel :: [(Identifier,Label)] -> String
 showListIdLabel [] = []
-showListIdLabel ((i,l):tail) = "(" ++ show(i) ++ ", " ++ show(l) ++ ")" ++ showListIdLabel tail
+showListIdLabel ((i,l):tail) = "(" ++ i ++ ", " ++ show(l) ++ ")," ++ showListIdLabel tail
 
 
 showListAexpr :: [Aexpr] -> String
 showListAexpr [] = []
-showListAexpr (a:tail) = "(" ++ showAexpr a ++ ")" ++ showListAexpr tail
+showListAexpr (a:tail) = "(" ++ showAexpr a ++ ") " ++ showListAexpr tail
 
 showAexpr :: Aexpr -> String
 showAexpr (Aexpr1 a1) = showAexpr1 a1
@@ -105,10 +118,27 @@ showAexpr2 (Aexpr3 a3) = showAexpr3 a3
 showAexpr2 (Neg a3) = " -" ++ showAexpr3 a3
 
 showAexpr3 :: Aexpr3 -> String
-showAexpr3 (Identifier i) = show(i)
-showAexpr3 (IntegerLiteral i) = show(i)
-showAexpr3 (IdentifierArray i a) = show(i)++"["++showAexpr(a)++"]"
+showAexpr3 (Identifier i) = i
+showAexpr3 (IntegerLiteral n) = show(n) 
+showAexpr3 (IdentifierArray i a) = i++"["++showAexpr(a)++"]"
 showAexpr3 (ABrack a) = "(" ++ showAexpr(a) ++ ")"
+
+showBexpr :: Bexpr -> String
+showBexpr (Bexpr1 b1) = showBexpr1 b1
+showBexpr (Or b b1) = showBexpr b ++ " || " ++ showBexpr1 b1
+
+showBexpr1 (Bexpr2 b2) = showBexpr2 b2
+showBexpr1 (And b1 b2) = showBexpr1 b1 ++ " && " ++ showBexpr2 b2
+
+showBexpr2 (GreatThan a1 a2) = showAexpr a1 ++ " > " ++ showAexpr a2
+showBexpr2 (LessThan a1 a2) = showAexpr a1 ++ " < " ++ showAexpr a2
+showBexpr2 (GreatEqual a1 a2) = showAexpr a1 ++ " >= " ++ showAexpr a2
+showBexpr2 (LessEqual a1 a2) = showAexpr a1 ++ " <= " ++ showAexpr a2
+showBexpr2 (Equal a1 a2) = showAexpr a1 ++ " = "  ++ showAexpr a2
+showBexpr2 (NotEqual a1 a2) = showAexpr a1 ++ " != " ++ showAexpr a2
+showBexpr2 (Not b) = "! " ++ showBexpr b
+showBexpr2 (Boolean b) = show(b)
+showBexpr2 (BBrack b) = "(" ++ showBexpr b ++ ")"
 
 
 --Type of different actions

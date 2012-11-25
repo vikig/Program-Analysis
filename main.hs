@@ -14,6 +14,7 @@ import Data.Graph.Inductive.Graph
 import Data.Set (Set)
 import Data.List
 import qualified Data.Set as Set
+import Data.Ord
 
 
 main :: IO ()
@@ -24,12 +25,12 @@ main = do
 	let statementList = getStmtList(parseTree)
 	let mergedList = mergeStmtDecl declList statementList  	
 	putStrLn ("\nParse Tree: " ++ show(parseTree))
-	putStrLn ("\nStatement List: " ++ show(mergedList))
+	--putStrLn ("\nStatement List: " ++ show(mergedList))
 	let (vertexList,edgeList,_) = recursiveFG mergedList [] [] 1 1
-	putStrLn ("\nV: " ++ show(vertexList))
-	putStrLn ("\nE: " ++ show(edgeList))	
+	putStrLn ("\nVertex List: \n" ++ showVertexList(vertexList))
+	putStrLn ("\nEdge List: \n" ++ show(edgeList))	
 	let flowGraph :: Gr Action () = mkGraph vertexList edgeList    
-	putStrLn("\nFlow Graph: " ++ show(flowGraph))
+	putStrLn("\nFlow Graph: \n" ++ show(flowGraph))
 	let trans = [(AssignType,RDFunction),(ArrayAssignType,RDFunction),(SkipType,NoOp),(BooleanActType,NoOp)]
 	let extval = RDExtVal
 	let bottom = RDanalysis (Set.empty)
@@ -39,7 +40,8 @@ main = do
 	putStrLn("\nFinal entry analysis: \n" ++ (showAnalysis fanalysis 1))
 	let fxanalysis = getExitAnalysis (nodes flowGraph) fanalysis trans flowGraph	
 	putStrLn("\nFinal exit analysis: \n" ++ (showAnalysis fxanalysis 1))
-	let point :: Label = 4	
-	let slice = mainSlice vertexList fanalysis [point] Set.empty 
-	putStrLn ("\nSlice at label "++ show(point)++": \n" ++ show(slice))
+	let point :: Label = 5
+	let slice = mainSlice flowGraph fanalysis [point] Set.empty 
+	let sliceo = sortBy (comparing fst) slice	
+	putStrLn ("\nSlice at label "++ show(point)++": \n" ++ showVertexList(sliceo))
 	print "done"
