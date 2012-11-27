@@ -8,7 +8,9 @@ import Datatypes
 import RD
 import AE
 import LV
+import DS
 import Reaches
+import IA
 
 import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
@@ -25,7 +27,9 @@ extractFunction _ = ErrorFunct
 
 -- Applies a function to a node of the flowgraph
 applyFunct :: FlowGraph -> Function -> Analysis -> Label -> Analysis
+applyFunct fg IAFunction (IAanalysis set) l = IAanalysis (exitia fg set l)
 applyFunct fg RDFunction (RDanalysis set) l = RDanalysis (exitrd fg set l)
+applyFunct fg DSFunction (DSanalysis set) l = DSanalysis (exitds fg set l)
 applyFunct fg AEFunction (AEanalysis set) l = AEanalysis (exitae fg set l)
 applyFunct fg LVFunction (LVanalysis set) l = LVanalysis (exitlv fg set l)
 applyFunct fg REFunction (REanalysis set) l = 
@@ -53,7 +57,9 @@ applyExtVal :: ExtVal -> [(Node, Action)] -> [Analysis]
 applyExtVal (RDExtVal) vertexList = rdExtVal vertexList
 applyExtVal (LVExtVal) vertexList = [LVanalysis Set.empty]--lvExtVal vertexList
 applyExtVal (AEExtVal) _ = [AEanalysis Set.empty]
-applyExtVal (REExtVal) _ = [REanalysis Set.empty] 
+applyExtVal (REExtVal) _ = [REanalysis Set.empty]
+applyExtVal (DSExtVal) vertexList = dsExtVal vertexList 
+applyExtVal (IAExtVal) vertexList = iaExtVal vertexList 
 
 -- Used to apply the extremal value to the extremal labels
 applyBottom :: Bottom -> [(Node, Action)] -> [Analysis]
@@ -69,6 +75,14 @@ replaceNth n newVal (x:xs)
 -- compares two analysis with the subsetof operator
 compareAnalysis :: Analysis -> Analysis -> Bool
 compareAnalysis (RDanalysis a1) (RDanalysis a2) =
+	if Set.isSubsetOf a1 a2 
+		then False
+		else True
+compareAnalysis (DSanalysis a1) (DSanalysis a2) =
+	if Set.isSubsetOf a1 a2 
+		then False
+		else True
+compareAnalysis (IAanalysis a1) (IAanalysis a2) =
 	if Set.isSubsetOf a1 a2 
 		then False
 		else True
@@ -90,6 +104,8 @@ compareAnalysis (REanalysis a1) (REanalysis a2) =
 analysisLUB :: Analysis -> Analysis -> Analysis
 analysisLUB (RDanalysis a1) (RDanalysis a2) = RDanalysis (Set.union a1 a2)
 analysisLUB (LVanalysis a1) (LVanalysis a2) = LVanalysis (Set.union a1 a2)
+analysisLUB (DSanalysis a1) (DSanalysis a2) = DSanalysis (unionSign (Set.toList a2) (Set.toList a1))
+analysisLUB (IAanalysis a1) (IAanalysis a2) = IAanalysis (unionInterval (Set.toList a2) (Set.toList a1))
 analysisLUB (REanalysis a1) (REanalysis a2) = REanalysis (Set.union a1 a2) 
 analysisLUB (AEanalysis a1) (AEanalysis a2) = AEanalysis (Set.intersection a1 a2)
 

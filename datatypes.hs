@@ -32,6 +32,7 @@ type EntryAE = Set Aexpr
 type EntryReaches = Set (Aexpr, (Set Label))
 type EntryLV = Set Identifier
 type EntryDS = Set (Identifier, Set Sign)
+type EntryIA = Set (Identifier, (Interval,Interval))
 
 
  
@@ -43,11 +44,28 @@ data Sign =
 	Zero
 	|
 	ErrorSign
-	deriving(Show,Eq)
+	deriving(Show,Eq,Ord)
+
+data Interval =
+	Z Int
+	|
+	BottomInt
+	|
+	InfNeg
+	|
+	InfPos
+	|
+	ErrorInterval
+	deriving(Show,Eq,Ord)
+	 
 
 
 --Functions that transfer functions map to
 data Function =
+	IAFunction
+	|
+	DSFunction	
+	|
 	LVFunction	
 	|	
 	REFunction	
@@ -66,7 +84,15 @@ data Function =
 type TransFunct = (ActionType, Function)
 
 --Possible values of Analysis[x]
-data Analysis =	
+data Analysis =
+	IAExtVal	
+	|
+	IAInitVal	
+	|
+	DSInitVal	
+	|
+	DSExtVal
+	|
 	AEInitVal	
 	|	
 	AEExtVal
@@ -87,6 +113,8 @@ data Analysis =
 	|
 	DSanalysis (Set (Identifier,(Set Sign)))
 	|
+	IAanalysis (Set (Identifier,(Interval,Interval)))
+	|
 	ErrorAnalysis
 	deriving(Show, Eq)
 
@@ -105,22 +133,46 @@ showAction Skip = "skip"
 
 showAnalysis :: [Analysis] -> Int -> String
 showAnalysis [] _ = []
-showAnalysis ((AEanalysis a):xs) int = show(int) ++ "- [" ++ showListAexpr (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((RDanalysis a):xs) int = show(int) ++ "- [" ++ showListIdLabel (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((LVanalysis a):xs) int = show(int) ++ "- [" ++ showListId (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((REanalysis a):xs) int = show(int) ++ "- [" ++ showListAexprLabel (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((AEanalysis a):xs) int = show(int) ++ "- [" ++ showListAexpr (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((RDanalysis a):xs) int = show(int) ++ "- [" ++ showListIdLabel (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((LVanalysis a):xs) int = show(int) ++ "- [" ++ showListId (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((REanalysis a):xs) int = show(int) ++ "- [" ++ showListAexprLabel (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((DSanalysis a):xs) int = show(int) ++ "- [" ++ showListIdSign (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((IAanalysis a):xs) int = show(int) ++ "- [" ++ showListIdInterval (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
 
 showListAexprLabel :: [(Aexpr,Label)] -> String
 showListAexprLabel [] = []
-showListAexprLabel ((a,l):tail) = "(" ++ showAexpr(a) ++ ", " ++ show(l) ++ ")" ++ showListAexprLabel tail
+showListAexprLabel ((a,l):tail) = " (" ++ showAexpr(a) ++ ", " ++ show(l) ++ ")" ++ showListAexprLabel tail
 
 showListId :: [Identifier] -> String
 showListId [] = []
-showListId (i:tail) = "(" ++ i ++ ")," ++ showListId tail
+showListId (i:tail) = " (" ++ i ++ ")" ++ showListId tail
 
 showListIdLabel :: [(Identifier,Label)] -> String
 showListIdLabel [] = []
-showListIdLabel ((i,l):tail) = "(" ++ i ++ ", " ++ show(l) ++ ")," ++ showListIdLabel tail
+showListIdLabel ((i,l):tail) = " (" ++ i ++ ", " ++ show(l) ++ ")" ++ showListIdLabel tail
+
+showListIdInterval :: [(Identifier,(Interval, Interval))] -> String
+showListIdInterval [] = []
+showListIdInterval ((i,(z1,z2)):tail) = " (" ++ i ++ ",[" ++ showInterval(z1)++","++ showInterval(z2) ++ "])" ++ showListIdInterval tail
+
+showInterval :: Interval -> String
+showInterval (Z z) = show(z)
+showInterval BottomInt = "B"
+showInterval InfPos = "+Inf"
+showInterval InfNeg= "-Inf"
+showInterval ErrorInterval = "ERROR"
+
+showListIdSign :: [(Identifier,(Set Sign))] -> String
+showListIdSign [] = []
+showListIdSign ((i,set):tail) = " (" ++ i ++ ", {" ++ showSign(Set.toList set) ++ " })" ++ showListIdSign tail
+
+showSign :: [Sign] -> String
+showSign [] = []
+showSign (Positive:xs) = " +" ++ showSign(xs) 
+showSign (Negative:xs) = " -" ++ showSign(xs)
+showSign (Zero:xs) = " 0" ++ showSign(xs)
+showSign (ErrorSign:xs) = " NAN" ++ showSign(xs)
 
 
 showListAexpr :: [Aexpr] -> String

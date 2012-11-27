@@ -8,6 +8,7 @@ import Data.Map
 import Parser
 import FlowGraph
 import Datatypes
+import Helper
 
 --Function that returns the labels where there is an assignment to the identifier
 getAssignmentLabels :: [(Label, Action)] -> Identifier -> Set (Identifier, Label)
@@ -106,21 +107,7 @@ genrd (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) l = Set.singleto
 genrd _ _ = Set.empty
 
 
--- returns the variables of the program
-fvrd :: [(Label, Action)] -> Set Identifier
-fvrd [] = Set.empty
-fvrd ((_,(Assign i _)):xs) = u
-	where		
-		h = Set.singleton i
-		t = fvrd xs
-		u = Set.union h t
-fvrd ((_,(ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _)):xs) = u
-	where		
-		a = i ++ "[" ++ Prelude.show(n) ++ "]" 
-		h = Set.singleton a
-		t = fvrd xs
-		u = Set.union h t
-fvrd (_:xs) = fvrd xs
+
 
 -- puts a label and an identifier into a tuple
 labelize :: Label -> Identifier -> (Identifier, Label)
@@ -145,11 +132,7 @@ entryrd fg l =
 		in	finalset
 -}
 
--- Extracts an action from a Maybe action, used to deal with the result of the lookup function
-extractAction :: Maybe Action -> Action
-extractAction (Just a) = a
---should never match this one
-extractAction _ = ErrorAct 
+
 	 
 
 --Exit analysis of a label
@@ -166,5 +149,5 @@ exitrd fg entryset label = result
 --Function that returns the initial analysis of the program, for every x returns (x,?) where ? is represented by -1 in our program
 rdExtVal :: [(Node, Action)] -> [Analysis]
 rdExtVal vertexList = [RDanalysis set]
-	where 	fv = fvrd vertexList
-		set = Set.map (labelize (-1)) fv
+	where 	fv = freevar vertexList
+		set = Set.map (makeTuple (-1)) fv
