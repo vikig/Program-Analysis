@@ -100,22 +100,24 @@ stmtIfFG (StmtIf bexpr thenStmtList elseStmtList) vertexList edgeList lc edgeHea
 		
 	in 	g 
 
-getEnclosingBoolean :: FlowGraph -> Node -> Int -> Node
-getEnclosingBoolean fg node ignoreBool = result
+getEnclosingBoolean :: FlowGraph -> Node -> Int -> Int -> Node
+getEnclosingBoolean fg node ignoreBool flag = result
 	where
 			vertexList = labNodes fg
-			predecessor = {-trace ("calling pre with node " ++ show(node))-} (pre fg node)
+			predecessor = trace ("calling pre with node " ++ show(node)) (pre fg node)
 			ignoreNumber = (parsePredecessor predecessor node) + ignoreBool
-			(n,a) = {-trace ("pre: " ++ show(predecessor))-} vertexList!!((minimum predecessor)-1)			
+			(n,a) = if (flag==0)
+					then trace ("pre0: " ++ show(predecessor) ++ " ignoreNumber: " ++ show(ignoreNumber)) vertexList!!((minimum predecessor)-1)
+					else trace ("pre1: " ++ show(predecessor) ++ " ignoreNumber: " ++ show(ignoreNumber)) vertexList!!((maximum predecessor)-1) 			
 			result = 
-				if (predecessor == []) 
+				if ((predecessor == []) || ((minimum predecessor)>node)) 
 					then 	(-1)
 					else 	if (checkIfBoolean a) 
 							then 
 								if ((ignoreNumber>0) && (length(suc fg n)==2)) 
-									then getEnclosingBoolean fg n (ignoreNumber-1) 
+									then getEnclosingBoolean fg n (ignoreNumber-1) flag 
 									else n
-							else (getEnclosingBoolean fg n ignoreNumber)
+							else (getEnclosingBoolean fg n ignoreNumber flag)
 			
 
 parsePredecessor :: [Node] -> Node -> Int

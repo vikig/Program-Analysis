@@ -30,12 +30,26 @@ type Worklist = [UEdge]
 type EntryRD = Set (Identifier, Label)
 type EntryAE = Set Aexpr
 type EntryReaches = Set (Aexpr, (Set Label))
+type EntryLV = Set Identifier
+type EntryDS = Set (Identifier, Set Sign)
 
 
---data Framework = MonFramework [Function] FlowGraph ExtLab ExtVal TransFunct 
+ 
+data Sign =
+	Negative
+	|
+	Positive
+	|
+	Zero
+	|
+	ErrorSign
+	deriving(Show,Eq)
+
 
 --Functions that transfer functions map to
 data Function =
+	LVFunction	
+	|	
 	REFunction	
 	|
 	AEFunction
@@ -59,6 +73,8 @@ data Analysis =
 	|	
 	RDExtVal
 	|
+	LVExtVal
+	|
 	REExtVal	
 	|
 	RDanalysis (Set (Identifier,Label))
@@ -66,6 +82,10 @@ data Analysis =
 	AEanalysis (Set Aexpr)
 	|
 	REanalysis (Set (Aexpr,Label))
+	|
+	LVanalysis (Set Identifier)
+	|
+	DSanalysis (Set (Identifier,(Set Sign)))
 	|
 	ErrorAnalysis
 	deriving(Show, Eq)
@@ -87,12 +107,16 @@ showAnalysis :: [Analysis] -> Int -> String
 showAnalysis [] _ = []
 showAnalysis ((AEanalysis a):xs) int = show(int) ++ "- [" ++ showListAexpr (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
 showAnalysis ((RDanalysis a):xs) int = show(int) ++ "- [" ++ showListIdLabel (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
+showAnalysis ((LVanalysis a):xs) int = show(int) ++ "- [" ++ showListId (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
 showAnalysis ((REanalysis a):xs) int = show(int) ++ "- [" ++ showListAexprLabel (Set.toList a) ++ "]\n" ++ showAnalysis xs (int+1)
 
 showListAexprLabel :: [(Aexpr,Label)] -> String
 showListAexprLabel [] = []
 showListAexprLabel ((a,l):tail) = "(" ++ showAexpr(a) ++ ", " ++ show(l) ++ ")" ++ showListAexprLabel tail
 
+showListId :: [Identifier] -> String
+showListId [] = []
+showListId (i:tail) = "(" ++ i ++ ")," ++ showListId tail
 
 showListIdLabel :: [(Identifier,Label)] -> String
 showListIdLabel [] = []

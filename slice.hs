@@ -105,12 +105,14 @@ mainSlice fg analysisList (p:tail) ignoreSet = result
 	where
 		vertexList = labNodes fg
 		headLabels = getSliceLabels vertexList (analysisList!!(p-1)) p
-		tail2 = {-trace("headLabels: " ++ show(headLabels))-} (Set.toList (Set.difference (Set.union headLabels (Set.fromList tail)) ignoreSet))		
-		enclosingBoolean = getEnclosingBoolean fg p 0
+		tail2 = trace("label " ++ show(p) ++ " headLabels: " ++ show(headLabels)) (Set.toList (Set.difference (Set.union headLabels (Set.fromList tail)) ignoreSet))		
+		enclosingBoolean1 = getEnclosingBoolean fg p 0 0
+		enclosingBoolean2 = getEnclosingBoolean fg p 0 1		
+		enclosingBoolean = Data.List.union [enclosingBoolean1] [enclosingBoolean2]		
 		unionThisIgnore = Set.union (Set.singleton p) ignoreSet
-		booleanVertex = if (enclosingBoolean /= (-1)) 
-					then 	mainSlice fg analysisList [enclosingBoolean] (Set.union unionThisIgnore (Set.fromList tail2))
-					else	[] 		
+		booleanVertex = if (enclosingBoolean1 /= (-1)) 
+					then 	mainSlice fg analysisList enclosingBoolean (Set.union unionThisIgnore (Set.fromList tail2))
+					else	[] 	
 		tailVertex = mainSlice fg analysisList tail2 unionThisIgnore
 		thisVertex = [vertexList!!(p-1)]
 		result = (Data.List.union (Data.List.union thisVertex tailVertex) booleanVertex)

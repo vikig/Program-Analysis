@@ -7,6 +7,7 @@ import FlowGraph
 import Datatypes
 import RD
 import AE
+import LV
 import Reaches
 
 import Data.Graph.Inductive
@@ -26,6 +27,7 @@ extractFunction _ = ErrorFunct
 applyFunct :: FlowGraph -> Function -> Analysis -> Label -> Analysis
 applyFunct fg RDFunction (RDanalysis set) l = RDanalysis (exitrd fg set l)
 applyFunct fg AEFunction (AEanalysis set) l = AEanalysis (exitae fg set l)
+applyFunct fg LVFunction (LVanalysis set) l = LVanalysis (exitlv fg set l)
 applyFunct fg REFunction (REanalysis set) l = 
 	
 	{-trace ("\ncalling with entrylist: " ++ show(entryList) ++", \nprogramAexp: " ++ show(programAexp) ++ ", \nlabel: " ++ show(l))-} (REanalysis (exitreaches fg entryList programAexp l) )
@@ -49,6 +51,7 @@ applyTransFunct l a transFunct flowGraph = result
 -- Used to apply the extremal value to the extremal labels
 applyExtVal :: ExtVal -> [(Node, Action)] -> [Analysis]
 applyExtVal (RDExtVal) vertexList = rdExtVal vertexList
+applyExtVal (LVExtVal) vertexList = [LVanalysis Set.empty]--lvExtVal vertexList
 applyExtVal (AEExtVal) _ = [AEanalysis Set.empty]
 applyExtVal (REExtVal) _ = [REanalysis Set.empty] 
 
@@ -69,6 +72,10 @@ compareAnalysis (RDanalysis a1) (RDanalysis a2) =
 	if Set.isSubsetOf a1 a2 
 		then False
 		else True
+compareAnalysis (LVanalysis a1) (LVanalysis a2) =
+	if Set.isSubsetOf a1 a2 
+		then False
+		else True
 compareAnalysis (AEanalysis a1) (AEanalysis a2) =
 	if Set.isSubsetOf a2 a1
 		then False
@@ -78,9 +85,11 @@ compareAnalysis (REanalysis a1) (REanalysis a2) =
 		then False
 		else True
 
+
 -- returns the union of two analysis
 analysisLUB :: Analysis -> Analysis -> Analysis
 analysisLUB (RDanalysis a1) (RDanalysis a2) = RDanalysis (Set.union a1 a2)
+analysisLUB (LVanalysis a1) (LVanalysis a2) = LVanalysis (Set.union a1 a2)
 analysisLUB (REanalysis a1) (REanalysis a2) = REanalysis (Set.union a1 a2) 
 analysisLUB (AEanalysis a1) (AEanalysis a2) = AEanalysis (Set.intersection a1 a2)
 

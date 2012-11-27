@@ -4,10 +4,9 @@ import Parser
 import Scanner
 import FlowGraph
 import Datatypes
-import RD
 import Worklist
-import AE
-import Slice
+import DeadCode
+
 
 import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
@@ -30,18 +29,20 @@ main = do
 	putStrLn ("\nVertex List: \n" ++ showVertexList(vertexList))
 	putStrLn ("\nEdge List: \n" ++ show(edgeList))	
 	let flowGraph :: Gr Action () = mkGraph vertexList edgeList    
+	let reverseFG = grev flowGraph
+	let edgeRev = labEdges reverseFG
+	putStrLn ("\nReverse Flow: \n" ++ show(reverse edgeRev))
 	putStrLn("\nFlow Graph: \n" ++ show(flowGraph))
-	let trans = [(AssignType,RDFunction),(ArrayAssignType,RDFunction),(SkipType,NoOp),(BooleanActType,NoOp)]
-	let extval = RDExtVal
-	let bottom = RDanalysis (Set.empty)
-	let ianalysis = worklistInit vertexList [1] extval bottom flowGraph
+	let trans = [(AssignType,LVFunction),(ArrayAssignType,LVFunction),(SkipType,NoOp),(BooleanActType,LVFunction)]
+	let extval = LVExtVal
+	let bottom = LVanalysis (Set.empty)
+	let ianalysis = worklistInit vertexList [noNodes flowGraph] extval bottom reverseFG
 	putStrLn("\nInitial analysis: \n" ++ (showAnalysis ianalysis 1)) 
-	let fanalysis = worklistWork edgeList ianalysis trans flowGraph
+	let fanalysis = worklistWork (reverse edgeRev) ianalysis trans reverseFG
 	putStrLn("\nFinal entry analysis: \n" ++ (showAnalysis fanalysis 1))
-	let fxanalysis = getExitAnalysis (nodes flowGraph) fanalysis trans flowGraph	
+	let fxanalysis = getExitAnalysis (nodes flowGraph) fanalysis trans reverseFG	
 	putStrLn("\nFinal exit analysis: \n" ++ (showAnalysis fxanalysis 1))
-	let point :: Label = 5
-	let slice = mainSlice flowGraph fanalysis [point] Set.empty 
-	let sliceo = sortBy (comparing fst) slice	
-	putStrLn ("\nSlice at label "++ show(point)++": \n" ++ showVertexList(sliceo))
+	let deadlabels = deadCode (nodes flowGraph) fanalysis vertexList
+	putStrLn("\nDead Labels: \n" ++ show(deadlabels))
+	
 	print "done"
