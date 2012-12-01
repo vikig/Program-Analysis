@@ -1,0 +1,13 @@
+program
+
+y:=-1;
+
+while y<=10
+do
+	A[y]:=1;
+	y:=y+2;
+od
+
+
+end
+
