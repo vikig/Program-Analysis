@@ -8,14 +8,13 @@ import Parser
 import FlowGraph
 import Datatypes
 import Helper
-import Debug.Trace
+
 
 minInt = -100
 maxInt = 100
 
 cartProd :: [Interval] -> [Interval] -> [(Interval, Interval)]
 cartProd xs ys = [(x,y) | x <- xs, y <- ys]
-
 
 calculateAexprInterval :: Aexpr -> EntryIA -> (Interval,Interval)
 calculateAexprInterval (Aexpr1 a1) eset = calculateAexprInterval1 a1 eset
@@ -48,8 +47,24 @@ calculateAexprInterval3 :: Aexpr3 -> EntryIA -> (Interval, Interval)
 calculateAexprInterval3 (Identifier i) eset = calculateIdentifierInterval i eset
 calculateAexprInterval3 (IntegerLiteral n) eset = calculateIntegerInterval n 
 calculateAexprInterval3 (IdentifierArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n))))) eset = calculateIdentifierInterval (i++"["++show(n)++"]") eset
---TODO calculateAexprInterval3 (IdentifierArray i a) = 
+calculateAexprInterval3 (IdentifierArray i a) eset = (z1,z2)
+	where
+		arrayIntervals = getArrayIntervals i (Set.toList eset)
+		lowerBounds = map fst arrayIntervals
+		upperBounds = map snd arrayIntervals
+		z1 = minimumInterval lowerBounds
+		z2 = maximumInterval upperBounds
+ 
 calculateAexprInterval3 (ABrack a) eset = calculateAexprInterval a eset
+
+
+getArrayIntervals :: Identifier -> [(Identifier, (Interval,Interval))] -> [(Interval,Interval)]
+getArrayIntervals _ [] = []
+getArrayIntervals a1 ((a2,interTuple):tail) = result ++ (getArrayIntervals a1 tail)
+	where
+			arrayName = takeWhile (/='[') a2
+			result = if a1 == arrayName then [interTuple] else []
+
 
 
 handleMaybeError :: Maybe (Interval, Interval) -> (Interval, Interval)
@@ -218,20 +233,20 @@ mulInterval :: (Interval, Interval) -> (Interval, Interval) -> (Interval, Interv
 mulInterval (a,b) (c,d) = (z1,z2) 
 	where
 		cartesian = [(multiplyInterval a c),(multiplyInterval a d),(multiplyInterval b c),(multiplyInterval b d)]		
-		mul1 = trace("cartesian: "++ show(cartesian))  minimum cartesian
+		mul1 = minimum cartesian
 		mul2 = maximum cartesian
-		z1 = trace("mul1: "++ show(mul1)) evaluateMinMax mul1
-		z2 = trace("z1: "++ show(z1)) evaluateMinMax mul2
+		z1 = evaluateMinMax mul1
+		z2 = evaluateMinMax mul2
 	
 
 divInterval :: (Interval, Interval) -> (Interval, Interval) -> (Interval, Interval)
 divInterval (a,b) (c,d) = (z1,z2) 
 	where
 		cartesian = [(divideInterval a c),(divideInterval a d),(divideInterval b c),(divideInterval b d)]		
-		mul1 = trace("cartesian: "++ show(cartesian))  minimum cartesian
+		mul1 = minimum cartesian
 		mul2 = maximum cartesian
-		z1 = trace("mul1: "++ show(mul1)) evaluateMinMax mul1
-		z2 = trace("z1: "++ show(z1)) evaluateMinMax mul2
+		z1 = evaluateMinMax mul1
+		z2 = evaluateMinMax mul2
 
 applyInterval  :: Action -> EntryIA -> Set (Identifier, (Interval,Interval))
 applyInterval (Assign i a) entrySet = result

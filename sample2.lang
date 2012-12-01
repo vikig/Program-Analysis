@@ -1,8 +1,0 @@
-program
-int a;
-int c[5];
-int b;
-a:=1;
-skip;
-end
-

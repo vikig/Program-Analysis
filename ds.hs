@@ -55,8 +55,17 @@ calculateAexprSign3 :: Aexpr3 -> EntryDS -> Set Sign
 calculateAexprSign3 (Identifier i) eset = calculateIdentifierSign i eset
 calculateAexprSign3 (IntegerLiteral n) eset = calculateIntegerSign n 
 calculateAexprSign3 (IdentifierArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n))))) eset = calculateIdentifierSign (i++"["++show(n)++"]") eset
---TODO calculateAexprSign3 (IdentifierArray i a) = 
+calculateAexprSign3 (IdentifierArray i a) eset = getArraySigns i (Set.toList eset)
 calculateAexprSign3 (ABrack a) eset = calculateAexprSign a eset
+
+
+getArraySigns :: Identifier -> [(Identifier, Set Sign)] -> Set Sign
+getArraySigns _ [] = Set.empty
+getArraySigns a1 ((a2,set):tail) = Set.union result (getArraySigns a1 tail)
+	where
+			arrayName = takeWhile (/='[') a2
+			result = if a1 == arrayName then set else Set.empty
+
 
 
 handleMaybeEmpty :: Maybe (Set Sign) -> Set Sign

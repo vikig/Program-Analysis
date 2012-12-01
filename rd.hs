@@ -20,7 +20,7 @@ getAssignmentLabels list i = u
 		t = getAssignmentLabels tailNode i
 		u = Set.union h t 
 
-		
+	
 --Parsea an action into a value of the lattice			
 rdParseAction :: (Label, Action) -> Identifier -> Set (Identifier, Label)
 rdParseAction (l, (Assign i1 _)) i2 = 	
@@ -106,34 +106,6 @@ genrd (ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _) l = Set.singl
 genrd (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) l = Set.singleton (i ++ "[" ++ Prelude.show(n) ++ "]", l)
 genrd _ _ = Set.empty
 
-
-
-
--- puts a label and an identifier into a tuple
-labelize :: Label -> Identifier -> (Identifier, Label)
-labelize l i = (i,l)
-
--- Entry function for a label, not necessary for the worklist algorithm
-{-
-entryrd :: FlowGraph -> Label -> Set (Identifier, Label)
-entryrd fg l = 
-	if l==1
-	then 
-		let 
-			vertexList = labNodes fg			
-			fv = fvrd vertexList 		
-			finalset = Set.map (labelize (-1)) fv 
-		in 	finalset
-	else 
-		let
-			prelist = pre fg l			
-			temp = Prelude.map (exitrd fg) prelist
-			finalset = Set.unions temp
-		in	finalset
--}
-
-
-	 
 
 --Exit analysis of a label
 exitrd :: FlowGraph -> EntryRD -> Label -> Set (Identifier, Label)

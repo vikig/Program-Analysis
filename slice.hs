@@ -13,7 +13,7 @@ import Data.Graph.Inductive.Graph
 import Data.Set (Set)
 import Data.List
 import qualified Data.Set as Set
-import Debug.Trace
+
 
 getAexprInAction :: Action -> Set Aexpr
 getAexprInAction (Assign i a) = Set.singleton a
@@ -105,7 +105,7 @@ mainSlice fg analysisList (p:tail) ignoreSet = result
 	where
 		vertexList = labNodes fg
 		headLabels = getSliceLabels vertexList (analysisList!!(p-1)) p
-		tail2 = trace("label " ++ show(p) ++ " headLabels: " ++ show(headLabels)) (Set.toList (Set.difference (Set.union headLabels (Set.fromList tail)) ignoreSet))		
+		tail2 = (Set.toList (Set.difference (Set.union headLabels (Set.fromList tail)) ignoreSet))		
 		enclosingBoolean1 = getEnclosingBoolean fg p 0 0
 		enclosingBoolean2 = getEnclosingBoolean fg p 0 1		
 		enclosingBoolean = Data.List.union [enclosingBoolean1] [enclosingBoolean2]		

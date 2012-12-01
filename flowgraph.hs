@@ -104,11 +104,11 @@ getEnclosingBoolean :: FlowGraph -> Node -> Int -> Int -> Node
 getEnclosingBoolean fg node ignoreBool flag = result
 	where
 			vertexList = labNodes fg
-			predecessor = trace ("calling pre with node " ++ show(node)) (pre fg node)
+			predecessor = pre fg node
 			ignoreNumber = (parsePredecessor predecessor node) + ignoreBool
 			(n,a) = if (flag==0)
-					then trace ("pre0: " ++ show(predecessor) ++ " ignoreNumber: " ++ show(ignoreNumber)) vertexList!!((minimum predecessor)-1)
-					else trace ("pre1: " ++ show(predecessor) ++ " ignoreNumber: " ++ show(ignoreNumber)) vertexList!!((maximum predecessor)-1) 			
+					then vertexList!!((minimum predecessor)-1)
+					else vertexList!!((maximum predecessor)-1) 			
 			result = 
 				if ((predecessor == []) || ((minimum predecessor)>node)) 
 					then 	(-1)

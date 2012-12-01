@@ -29,11 +29,11 @@ type Worklist = [UEdge]
 -- Set of lattice values used by Reaching definitions to calculate the Exit set
 type EntryRD = Set (Identifier, Label)
 type EntryAE = Set Aexpr
-type EntryReaches = Set (Aexpr, (Set Label))
 type EntryLV = Set Identifier
 type EntryDS = Set (Identifier, Set Sign)
 type EntryIA = Set (Identifier, (Interval,Interval))
-
+	
+-- Used in Buffer overflow analysis to mark if a range is partially inside, outside or completely inside another range
 data RangeCheck = 
 	Partial
 	| 
@@ -42,6 +42,8 @@ data RangeCheck =
 	Inside
 	deriving(Show,Eq)
  
+
+-- Detection of Signs 
 data Sign =
 	Negative
 	|
@@ -49,19 +51,20 @@ data Sign =
 	|
 	Zero
 	|
-	ErrorSign
+	ErrorSign -- Division by Zero
 	deriving(Show,Eq,Ord)
 
+-- Interval Analysis
 data Interval =
-	Z Int
+	Z Int -- number
 	|
-	BottomInt
+	BottomInt -- bottom element
 	|
-	InfNeg
+	InfNeg -- infinite negative
 	|
-	InfPos
+	InfPos -- infinite positive
 	|
-	ErrorInterval
+	ErrorInterval -- division by zero
 	deriving(Show,Eq,Ord)
 	 
 
@@ -124,104 +127,7 @@ data Analysis =
 	ErrorAnalysis
 	deriving(Show, Eq)
 
-showVertexList :: VertexList -> String
-showVertexList [] = []
-showVertexList ((i,a):tail) = show(i) ++ "- << " ++ showAction a ++ " >>\n" ++ showVertexList tail
-
-showAction :: Action -> String
-showAction (Assign i a) = i ++ " := " ++ showAexpr(a)
-showAction (ArrayAssign i a v) = i ++ "[" ++ showAexpr(a) ++ "] := " ++ showAexpr(v)
-showAction (BooleanAct b) = showBexpr b
-showAction (WriteAct a) = "write " ++ showAexpr a
-showAction (ReadAct i) = "read " ++ i
-showAction (ReadArray i a) = "read " ++ i ++"["++ showAexpr a ++"]"  
-showAction Skip = "skip"
-
-showAnalysis :: [Analysis] -> Int -> String
-showAnalysis [] _ = []
-showAnalysis ((AEanalysis a):xs) int = show(int) ++ "- [" ++ showListAexpr (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((RDanalysis a):xs) int = show(int) ++ "- [" ++ showListIdLabel (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((LVanalysis a):xs) int = show(int) ++ "- [" ++ showListId (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((REanalysis a):xs) int = show(int) ++ "- [" ++ showListAexprLabel (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((DSanalysis a):xs) int = show(int) ++ "- [" ++ showListIdSign (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
-showAnalysis ((IAanalysis a):xs) int = show(int) ++ "- [" ++ showListIdInterval (Set.toList a) ++ " ]\n" ++ showAnalysis xs (int+1)
-
-showListAexprLabel :: [(Aexpr,Label)] -> String
-showListAexprLabel [] = []
-showListAexprLabel ((a,l):tail) = " (" ++ showAexpr(a) ++ ", " ++ show(l) ++ ")" ++ showListAexprLabel tail
-
-showListId :: [Identifier] -> String
-showListId [] = []
-showListId (i:tail) = " (" ++ i ++ ")" ++ showListId tail
-
-showListIdLabel :: [(Identifier,Label)] -> String
-showListIdLabel [] = []
-showListIdLabel ((i,l):tail) = " (" ++ i ++ ", " ++ show(l) ++ ")" ++ showListIdLabel tail
-
-showListIdInterval :: [(Identifier,(Interval, Interval))] -> String
-showListIdInterval [] = []
-showListIdInterval ((i,(z1,z2)):tail) = " (" ++ i ++ ",[" ++ showInterval(z1)++","++ showInterval(z2) ++ "])" ++ showListIdInterval tail
-
-showInterval :: Interval -> String
-showInterval (Z z) = show(z)
-showInterval BottomInt = "B"
-showInterval InfPos = "+Inf"
-showInterval InfNeg= "-Inf"
-showInterval ErrorInterval = "ERROR"
-
-showListIdSign :: [(Identifier,(Set Sign))] -> String
-showListIdSign [] = []
-showListIdSign ((i,set):tail) = " (" ++ i ++ ", {" ++ showSign(Set.toList set) ++ " })" ++ showListIdSign tail
-
-showSign :: [Sign] -> String
-showSign [] = []
-showSign (Positive:xs) = " +" ++ showSign(xs) 
-showSign (Negative:xs) = " -" ++ showSign(xs)
-showSign (Zero:xs) = " 0" ++ showSign(xs)
-showSign (ErrorSign:xs) = " NAN" ++ showSign(xs)
-
-
-showListAexpr :: [Aexpr] -> String
-showListAexpr [] = []
-showListAexpr (a:tail) = "(" ++ showAexpr a ++ ") " ++ showListAexpr tail
-
-showAexpr :: Aexpr -> String
-showAexpr (Aexpr1 a1) = showAexpr1 a1
-showAexpr (Plus a a1) = showAexpr a ++ " + " ++ showAexpr1 a1
-showAexpr (Minus a a1) = showAexpr a ++ " - " ++ showAexpr1 a1
-
-showAexpr1 :: Aexpr1 -> String
-showAexpr1 (Aexpr2 a2) = showAexpr2 a2
-showAexpr1 (Mul a1 a2) = showAexpr1 a1 ++ " * " ++ showAexpr2 a2
-showAexpr1 (Div a1 a2) = showAexpr1 a1 ++ " / " ++ showAexpr2 a2
-
-showAexpr2 :: Aexpr2 -> String
-showAexpr2 (Aexpr3 a3) = showAexpr3 a3
-showAexpr2 (Neg a3) = " -" ++ showAexpr3 a3
-
-showAexpr3 :: Aexpr3 -> String
-showAexpr3 (Identifier i) = i
-showAexpr3 (IntegerLiteral n) = show(n) 
-showAexpr3 (IdentifierArray i a) = i++"["++showAexpr(a)++"]"
-showAexpr3 (ABrack a) = "(" ++ showAexpr(a) ++ ")"
-
-showBexpr :: Bexpr -> String
-showBexpr (Bexpr1 b1) = showBexpr1 b1
-showBexpr (Or b b1) = showBexpr b ++ " || " ++ showBexpr1 b1
-
-showBexpr1 (Bexpr2 b2) = showBexpr2 b2
-showBexpr1 (And b1 b2) = showBexpr1 b1 ++ " && " ++ showBexpr2 b2
-
-showBexpr2 (GreatThan a1 a2) = showAexpr a1 ++ " > " ++ showAexpr a2
-showBexpr2 (LessThan a1 a2) = showAexpr a1 ++ " < " ++ showAexpr a2
-showBexpr2 (GreatEqual a1 a2) = showAexpr a1 ++ " >= " ++ showAexpr a2
-showBexpr2 (LessEqual a1 a2) = showAexpr a1 ++ " <= " ++ showAexpr a2
-showBexpr2 (Equal a1 a2) = showAexpr a1 ++ " = "  ++ showAexpr a2
-showBexpr2 (NotEqual a1 a2) = showAexpr a1 ++ " != " ++ showAexpr a2
-showBexpr2 (Not b) = "! " ++ showBexpr b
-showBexpr2 (Boolean b) = show(b)
-showBexpr2 (BBrack b) = "(" ++ showBexpr b ++ ")"
-
+type OverflowAnalysis = [(Label,RangeCheck)]
 
 --Type of different actions
 data ActionType =
@@ -240,14 +146,6 @@ data ActionType =
 	SkipType
 	deriving(Show, Eq)
 
-getActType :: Action -> ActionType
-getActType (Assign _ _) = AssignType
-getActType (ArrayAssign _ _ _) = ArrayAssignType
-getActType (BooleanAct _) = BooleanActType
-getActType (WriteAct _) = WriteActType
-getActType (ReadAct _) = ReadActType
-getActType (ReadArray _ _) = ReadArrayType
-getActType (Skip) = SkipType
 
 --Abstraction of Program statements to be put into the nodes of the flowgraph
 data Action = 
@@ -377,10 +275,3 @@ data Bexpr2
 type Identifier	= String
 type IntegerLiteral = Int
 type Boolean = Bool
-
-
-
-
-
-
-

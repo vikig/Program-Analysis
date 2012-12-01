@@ -9,8 +9,8 @@ import RD
 import AE
 import LV
 import DS
-import Reaches
 import IA
+import Helper
 
 import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
@@ -32,14 +32,6 @@ applyFunct fg RDFunction (RDanalysis set) l = RDanalysis (exitrd fg set l)
 applyFunct fg DSFunction (DSanalysis set) l = DSanalysis (exitds fg set l)
 applyFunct fg AEFunction (AEanalysis set) l = AEanalysis (exitae fg set l)
 applyFunct fg LVFunction (LVanalysis set) l = LVanalysis (exitlv fg set l)
-applyFunct fg REFunction (REanalysis set) l = 
-	
-	{-trace ("\ncalling with entrylist: " ++ show(entryList) ++", \nprogramAexp: " ++ show(programAexp) ++ ", \nlabel: " ++ show(l))-} (REanalysis (exitreaches fg entryList programAexp l) )
-	where 
-		vertexList = labNodes fg		
-		programAexp = Set.toList (aexp vertexList)
-		entryList = Set.toList set
-	
 applyFunct _ NoOp a _ = a 
 applyFunct _ _ _ _ = ErrorAnalysis	 		
 
@@ -94,10 +86,6 @@ compareAnalysis (AEanalysis a1) (AEanalysis a2) =
 	if Set.isSubsetOf a2 a1
 		then False
 		else True
-compareAnalysis (REanalysis a1) (REanalysis a2) =
-	if Set.isSubsetOf a1 a2 
-		then False
-		else True
 
 
 -- returns the union of two analysis
@@ -106,7 +94,6 @@ analysisLUB (RDanalysis a1) (RDanalysis a2) = RDanalysis (Set.union a1 a2)
 analysisLUB (LVanalysis a1) (LVanalysis a2) = LVanalysis (Set.union a1 a2)
 analysisLUB (DSanalysis a1) (DSanalysis a2) = DSanalysis (unionSign (Set.toList a2) (Set.toList a1))
 analysisLUB (IAanalysis a1) (IAanalysis a2) = IAanalysis (unionInterval (Set.toList a2) (Set.toList a1))
-analysisLUB (REanalysis a1) (REanalysis a2) = REanalysis (Set.union a1 a2) 
 analysisLUB (AEanalysis a1) (AEanalysis a2) = AEanalysis (Set.intersection a1 a2)
 
 -- first part of the worklist algorithm, where the extremal labels are initialized to extremal values

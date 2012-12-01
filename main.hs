@@ -6,7 +6,8 @@ import FlowGraph
 import Datatypes
 import Worklist
 import IA
-
+import BufferOverflow
+import Debug.Trace
 
 import Data.Graph.Inductive
 import Data.Graph.Inductive.Graph
@@ -40,5 +41,8 @@ main = do
 	let fxanalysis = getExitAnalysis (nodes flowGraph) fanalysis trans flowGraph	
 	--putStrLn(show fxanalysis)
 	putStrLn("\nFinal exit analysis: \n" ++ (showAnalysis fxanalysis 1))
+	let overflow =  if (checkIfErrorAnalysis fanalysis) then error("Interval Analysis contains error states") else bufferOverflow declList fanalysis vertexList
+	putStrLn("\nBuffer Overflow Result: \n" ++ showOverflowAnalysis(overflow))
+
 	
 	print "done"
