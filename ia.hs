@@ -73,20 +73,20 @@ calculateIntegerInterval n
 	|	otherwise			= (Z n, Z n)
 
 plusInterval :: (Interval, Interval) -> (Interval, Interval) -> (Interval, Interval)
-plusInterval (InfNeg,_) (_,InfPos)	= (InfNeg,InfPos)
-plusInterval (InfNeg,_) (_,_)		= (InfNeg,InfNeg)
-plusInterval (_,InfNeg) (_,_) 		= (InfNeg,InfNeg)
-plusInterval (_,_) (InfNeg,_) 		= (InfNeg,InfNeg)
-plusInterval (_,_) (_,InfNeg) 		= (InfNeg,InfNeg)
-plusInterval (_,InfPos) (InfNeg,_)	= (InfNeg,InfPos)
-plusInterval (InfPos,_) (_,_)		= (InfPos,InfPos)
-plusInterval (_,InfPos) (_,_) 		= (InfPos,InfPos)
-plusInterval (_,_) (InfPos,_) 		= (InfPos,InfPos)
-plusInterval (_,_) (_,InfPos) 		= (InfPos,InfPos)
 plusInterval (BottomInt,_) (_,_)	= (BottomInt,BottomInt)
 plusInterval (_,BottomInt) (_,_) 	= (BottomInt,BottomInt)
 plusInterval (_,_) (BottomInt,_) 	= (BottomInt,BottomInt)
 plusInterval (_,_) (_,BottomInt) 	= (BottomInt,BottomInt)
+plusInterval (InfNeg,_) (_,InfPos)	= (InfNeg,InfPos)
+plusInterval (_,InfPos) (InfNeg,_)	= (InfNeg,InfPos)
+plusInterval (_,_) (InfPos,_) 		= (InfPos,InfPos)
+plusInterval (_,_) (_,InfPos) 		= (InfPos,InfPos)
+plusInterval (InfNeg,_) (_,_)		= (InfNeg,InfNeg)
+plusInterval (_,InfPos) (_,_) 		= (InfPos,InfPos)
+plusInterval (InfPos,_) (_,_)		= (InfPos,InfPos)
+plusInterval (_,InfNeg) (_,_) 		= (InfNeg,InfNeg)
+plusInterval (_,_) (InfNeg,_) 		= (InfNeg,InfNeg)
+plusInterval (_,_) (_,InfNeg) 		= (InfNeg,InfNeg)
 plusInterval (Z z11,Z z12) (Z z21,Z z22) = (z1,z2) 
 	where
 		sum1 = z11+z21
@@ -96,20 +96,21 @@ plusInterval (Z z11,Z z12) (Z z21,Z z22) = (z1,z2)
 
 		
 minusInterval :: (Interval, Interval) -> (Interval, Interval) -> (Interval, Interval)
-minusInterval (InfNeg,_) (InfNeg,_)	= (InfNeg,InfPos)
-minusInterval (InfNeg,_) (_,_)		= (InfNeg,InfNeg)
-minusInterval (_,InfNeg) (_,_) 		= (InfNeg,InfNeg)
-minusInterval (_,_) (InfNeg,_) 		= (InfPos,InfPos)
-minusInterval (_,_) (_,InfNeg) 		= (InfPos,InfPos)
-minusInterval (_,InfPos) (_,InfPos)	= (InfNeg,InfPos)
-minusInterval (InfPos,_) (_,_)		= (InfPos,InfPos)
-minusInterval (_,InfPos) (_,_) 		= (InfPos,InfPos)
-minusInterval (_,_) (InfPos,_) 		= (InfNeg,InfNeg)
-minusInterval (_,_) (_,InfPos) 		= (InfNeg,InfNeg)
 minusInterval (BottomInt,_) (_,_)	= (BottomInt,BottomInt)
 minusInterval (_,BottomInt) (_,_) 	= (BottomInt,BottomInt)
 minusInterval (_,_) (BottomInt,_) 	= (BottomInt,BottomInt)
 minusInterval (_,_) (_,BottomInt) 	= (BottomInt,BottomInt)
+minusInterval (InfNeg,_) (InfNeg,_)	= (InfNeg,InfPos)
+minusInterval (_,InfPos) (_,InfPos)	= (InfNeg,InfPos)
+minusInterval (_,InfNeg) (_,_) 		= (InfNeg,InfNeg)
+minusInterval (_,_) (InfNeg,_) 		= (InfPos,InfPos)
+minusInterval (_,_) (_,InfNeg) 		= (InfPos,InfPos)
+minusInterval (InfPos,_) (_,_)		= (InfPos,InfPos)
+minusInterval (_,InfPos) (_,_) 		= (InfPos,InfPos)
+minusInterval (_,_) (InfPos,_) 		= (InfNeg,InfNeg)
+minusInterval (_,_) (_,InfPos) 		= (InfNeg,InfNeg)
+
+minusInterval (InfNeg,_) (_,_)		= (InfNeg,InfNeg)
 minusInterval (Z z11,Z z12) (Z z21,Z z22) = (z1,z2) 
 	where
 		sum1 = z11-z22
@@ -117,73 +118,120 @@ minusInterval (Z z11,Z z12) (Z z21,Z z22) = (z1,z2)
 		z1 = if (sum1 < minInt) then InfNeg else if (sum1 > maxInt) then InfPos else (Z sum1)
 		z2 = if (sum2 < minInt) then InfNeg else if (sum2 > maxInt) then InfPos else (Z sum2)
 
+
+multiplyInterval :: Interval -> Interval -> Interval
+multiplyInterval BottomInt _ = BottomInt
+multiplyInterval _ BottomInt = BottomInt
+multiplyInterval ErrorInterval _ = ErrorInterval
+multiplyInterval _ ErrorInterval = ErrorInterval
+multiplyInterval InfNeg InfNeg = InfPos
+multiplyInterval InfNeg InfPos = InfNeg
+multiplyInterval InfPos InfNeg = InfNeg
+multiplyInterval InfPos InfPos = InfPos
+multiplyInterval (Z 0) _ = (Z 0)
+multiplyInterval _ (Z 0) = (Z 0)
+multiplyInterval InfNeg (Z a)  
+			| a<0 	= InfPos
+			| a>0 	= InfNeg
+multiplyInterval (Z a) InfNeg  
+			| a<0 	= InfPos
+			| a>0 	= InfNeg
+multiplyInterval (Z a) InfPos 
+			| a<0   = InfNeg
+			| a>0 	= InfPos
+multiplyInterval InfPos (Z a) 
+			| a<0 	= InfNeg
+			| a>0 	= InfPos
+multiplyInterval (Z a) (Z b) = (Z (a*b))
+
+divideInterval :: Interval -> Interval -> Interval
+divideInterval BottomInt _ = BottomInt
+divideInterval _ BottomInt = BottomInt
+divideInterval ErrorInterval _ = ErrorInterval
+divideInterval _ ErrorInterval = ErrorInterval
+divideInterval InfNeg InfNeg = InfPos
+divideInterval InfNeg InfPos = InfNeg
+divideInterval InfPos InfNeg = InfNeg
+divideInterval InfPos InfPos = InfPos
+divideInterval (Z 0) _ = (Z 0)
+divideInterval _ (Z 0) = ErrorInterval
+divideInterval InfNeg (Z a)  
+			| a<0 	= InfPos
+			| a>0 	= InfNeg
+divideInterval (Z a) InfNeg = (Z 0)  
+divideInterval (Z a) InfPos = (Z 0)
+
+divideInterval InfPos (Z a) 
+			| a<0 	= InfNeg
+			| a>0 	= InfPos
+
+divideInterval (Z a) (Z b) = (Z (div a b))
+
+
+convertToNumber :: [Interval] -> [Int]
+convertToNumber [] = []
+convertToNumber ((Z a):tail) = [a] ++ convertToNumber tail
+convertToNumber (InfPos:tail) = convertToNumber tail
+convertToNumber (InfNeg:tail) = convertToNumber tail
+convertToNumber (ErrorInterval:tail) = convertToNumber tail
+convertToNumber (BottomInt:tail) = convertToNumber tail
+
+minimumInterval :: [Interval] -> Interval
+minimumInterval list = 
+	if (elem ErrorInterval list) 
+		then ErrorInterval
+		else if (elem BottomInt list) 
+			then BottomInt	
+			else if (elem InfNeg list) 
+				then InfNeg
+				else if (Set.fromList list) == (Set.singleton InfPos)
+					then	InfPos
+					else 	(Z (minimum (convertToNumber list))) 
+maximumInterval :: [Interval] -> Interval
+maximumInterval list = 
+	if (elem ErrorInterval list) 
+		then ErrorInterval
+		else if (elem BottomInt list) 
+			then BottomInt	
+			else if (elem InfPos list) 
+				then InfPos
+				else if (Set.fromList list) == (Set.singleton InfNeg)
+					then 	InfNeg
+					else	(Z (maximum (convertToNumber list))) 
+
+extractNumber :: Interval -> Int
+extractNumber (Z a) = a
+
+evaluateMinMax :: Interval -> Interval
+evaluateMinMax ErrorInterval = ErrorInterval
+evaluateMinMax BottomInt = BottomInt
+evaluateMinMax InfNeg = InfNeg
+evaluateMinMax InfPos = InfPos
+evaluateMinMax (Z a) 
+		| a<minInt 	= InfNeg
+		| a>maxInt 	= InfPos
+		| otherwise 	= (Z a)
+
+			
+
 mulInterval :: (Interval, Interval) -> (Interval, Interval) -> (Interval, Interval)
-mulInterval (InfNeg,_) (_,_)		= (InfNeg,InfNeg)
-mulInterval (_,InfNeg) (_,_) 		= (InfNeg,InfNeg)
-mulInterval (_,_) (InfNeg,_) 		= (InfNeg,InfNeg)
-mulInterval (_,_) (_,InfNeg) 		= (InfNeg,InfNeg)
-mulInterval (InfPos,_) (_,_)		= (InfPos,InfPos)
-mulInterval (_,InfPos) (_,_) 		= (InfPos,InfPos)
-mulInterval (_,_) (InfPos,_) 		= (InfPos,InfPos)
-mulInterval (_,_) (_,InfPos) 		= (InfPos,InfPos)
-mulInterval (BottomInt,_) (_,_)	= (BottomInt,BottomInt)
-mulInterval (_,BottomInt) (_,_) 	= (BottomInt,BottomInt)
-mulInterval (_,_) (BottomInt,_) 	= (BottomInt,BottomInt)
-mulInterval (_,_) (_,BottomInt) 	= (BottomInt,BottomInt)
-mulInterval (Z a,Z b) (Z c,Z d) = (z1,z2) 
+mulInterval (a,b) (c,d) = (z1,z2) 
 	where
-		cartesian = [a*c,a*d,b*c,b*d]		
-		mul1 = minimum cartesian
+		cartesian = [(multiplyInterval a c),(multiplyInterval a d),(multiplyInterval b c),(multiplyInterval b d)]		
+		mul1 = trace("cartesian: "++ show(cartesian))  minimum cartesian
 		mul2 = maximum cartesian
-		z1 = if (mul1 < minInt) 
-			then InfNeg 
-			else 
-				if (mul1 > maxInt) 
-					then InfPos 
-					else (Z mul1)
-		z2 = if (mul2 < minInt) 
-			then InfNeg 
-			else 
-				if (mul2 > maxInt) 
-					then InfPos 
-					else (Z mul2)
+		z1 = trace("mul1: "++ show(mul1)) evaluateMinMax mul1
+		z2 = trace("z1: "++ show(z1)) evaluateMinMax mul2
+	
 
 divInterval :: (Interval, Interval) -> (Interval, Interval) -> (Interval, Interval)
-divInterval (InfNeg,_) (_,_)		= (InfNeg,InfNeg)
-divInterval (_,InfNeg) (_,_) 		= (InfNeg,InfNeg)
-divInterval (_,_) (InfNeg,_) 		= (InfNeg,InfNeg)
-divInterval (_,_) (_,InfNeg) 		= (InfNeg,InfNeg)
-divInterval (InfPos,_) (_,_)		= (InfPos,InfPos)
-divInterval (_,InfPos) (_,_) 		= (InfPos,InfPos)
-divInterval (_,_) (InfPos,_) 		= (InfPos,InfPos)
-divInterval (_,_) (_,InfPos) 		= (InfPos,InfPos)
-divInterval (BottomInt,_) (_,_)		= (BottomInt,BottomInt)
-divInterval (_,BottomInt) (_,_) 	= (BottomInt,BottomInt)
-divInterval (_,_) (BottomInt,_) 	= (BottomInt,BottomInt)
-divInterval (_,_) (_,BottomInt) 	= (BottomInt,BottomInt)
-divInterval (Z a,Z b) (Z c,Z d) = (z1,z2) 
+divInterval (a,b) (c,d) = (z1,z2) 
 	where
-		cartesian = [div a c, div a d, div b c, div b d]		
-		div1 = minimum cartesian
-		div2 = maximum cartesian
-		z1 = if (False == (c<=0&&d>=0)) 
-			then 
-				if (div1 < minInt) 
-					then InfNeg 
-					else 
-						if (div1 > maxInt) 
-							then InfPos 
-							else (Z div1)
-			else 	ErrorInterval
-		z2 = if (False == (c<=0&&d>=0))
-			then 
-				if (div2 < minInt) 
-					then InfNeg 
-					else 
-						if (div2 > maxInt) 
-							then InfPos 
-							else (Z div2)
-			else	ErrorInterval
+		cartesian = [(divideInterval a c),(divideInterval a d),(divideInterval b c),(divideInterval b d)]		
+		mul1 = trace("cartesian: "++ show(cartesian))  minimum cartesian
+		mul2 = maximum cartesian
+		z1 = trace("mul1: "++ show(mul1)) evaluateMinMax mul1
+		z2 = trace("z1: "++ show(z1)) evaluateMinMax mul2
 
 applyInterval  :: Action -> EntryIA -> Set (Identifier, (Interval,Interval))
 applyInterval (Assign i a) entrySet = result
@@ -224,9 +272,6 @@ unionInterval ((i,newSet):xs) analysisSet = result
 	where
 			oldSet = handleMaybeError (lookup i analysisSet)
 			result = Set.union (Set.singleton (i,newSet)) (unionInterval xs analysisSet)
-
-
-
 
 
 --Exit analysis of a label

@@ -8,6 +8,15 @@ import qualified Data.Set as Set
 
 import Datatypes
 
+
+
+getArrayBound :: DeclList -> Identifier -> Int
+getArrayBound NoDecl _ = -1
+getArrayBound (DeclList (DeclArray i1 n) dl) i2 = if i1==i2 then (n-1) else getArrayBounds dl
+getArrayBound (DeclList _ dl) i = getArrayBounds dl i 
+
+
+
 -- returns the variables of the program
 freevar :: [(Label, Action)] -> Set Identifier
 freevar [] = Set.empty

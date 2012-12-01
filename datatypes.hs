@@ -34,7 +34,13 @@ type EntryLV = Set Identifier
 type EntryDS = Set (Identifier, Set Sign)
 type EntryIA = Set (Identifier, (Interval,Interval))
 
-
+data RangeCheck = 
+	Partial
+	| 
+	Outside
+	|
+	Inside
+	deriving(Show,Eq)
  
 data Sign =
 	Negative
