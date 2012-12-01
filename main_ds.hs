@@ -29,7 +29,7 @@ main = do
 	putStrLn ("\nEDGE LIST: \n" ++ show(edgeList))	
 	let flowGraph :: Gr Action () = mkGraph vertexList edgeList    
 	putStrLn("\nFLOW GRAPH: " ++ show(flowGraph))
-	let trans = [(AssignType,DSFunction),(ArrayAssignType,DSFunction),(ReadActType, DSFunction),(ReadArrayType,DSFunction),(SkipType,NoOp),(BooleanActType,NoOp)]
+	let trans = [(AssignType,DSFunction),(ArrayAssignType,DSFunction),(ReadActType, DSFunction),(ReadArrayType,DSFunction),(SkipType,NoOp),(BooleanActType,NoOp),(WriteActType,DSFunction)]
 	let extval = DSExtVal
 	let bottom = DSanalysis (Set.empty)
 	putStrLn("\n---------------------------")	
