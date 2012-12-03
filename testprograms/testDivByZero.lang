@@ -1,0 +1,10 @@
+program 
+
+int x;
+int y;
+
+y:=1;
+
+y:=y/x;
+
+end

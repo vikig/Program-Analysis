@@ -1,0 +1,17 @@
+program
+int x;
+int A[5];
+int y;
+int z;
+
+x:=0;
+y:=1;
+z:=-2;
+while x<6 do
+	A[x]:=y;
+	x:=x+1;
+	y:=y*2;
+od
+write A[3];
+end
+

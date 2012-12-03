@@ -1,0 +1,14 @@
+program
+
+int A[3];
+int x;	
+
+x:=x+1;
+A[x]:=1;
+x:=3;
+A[x]:=2;
+read x;
+A[x]:=3;
+
+end
+
