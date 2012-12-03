@@ -19,6 +19,6 @@ deadCode [] _ _ = []
 deadCode (l:lTail) ((LVanalysis entryAnalysis):aTail) ((n,a):vTail) = result ++ (deadCode lTail aTail vTail)
 	where
 			killset = killlv a
-			result = if Set.isProperSubsetOf entryAnalysis killset
-					then	[l]
-					else 	[]
+			result = if Set.isSubsetOf killset entryAnalysis
+					then 	[]
+					else 	[l]

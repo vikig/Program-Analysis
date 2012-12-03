@@ -20,25 +20,25 @@ killlv (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n))))) = Set.singleton 
 killlv _ = Set.empty	
 
 -- the gen function
-genlv :: Action -> Set Identifier
-genlv (Assign _ a) = getIdentifiersInSetAexpr [a] 
-genlv (ArrayAssign _ a v) = getIdentifiersInSetAexpr (Set.toList (Set.union (Set.singleton a) (Set.singleton v)))
-genlv (ReadArray _ a) = getIdentifiersInSetAexpr [a]
-genlv (WriteAct a) = getIdentifiersInSetAexpr [a]
-genlv (BooleanAct b) = getIdentifiersInSetAexpr (Set.toList (getBexprAexpr b))
-genlv _ = Set.empty
+genlv :: Action -> DeclList -> Set Identifier
+genlv (Assign _ a) dl = getIdentifiersInSetAexpr [a] dl
+genlv (ArrayAssign _ a v) dl = getIdentifiersInSetAexpr (Set.toList (Set.union (Set.singleton a) (Set.singleton v))) dl
+genlv (ReadArray _ a) dl = getIdentifiersInSetAexpr [a] dl
+genlv (WriteAct a) dl = getIdentifiersInSetAexpr [a] dl
+genlv (BooleanAct b) dl = getIdentifiersInSetAexpr (Set.toList (getBexprAexpr b)) dl
+genlv _ _ = Set.empty
 
 
 	 
 
 --Exit analysis of a label
-exitlv :: FlowGraph -> EntryLV -> Label -> Set Identifier
-exitlv fg entryset label = result
+exitlv :: FlowGraph -> EntryLV -> Label -> DeclList -> Set Identifier
+exitlv fg entryset label dl = result
 	where 
 		vertexList = labNodes fg		
 		action = extractAction (Prelude.lookup label vertexList)		
 		killset = killlv action
-		genset = genlv action
+		genset = genlv action dl
 		tempset = Set.difference entryset killset
 		result = Set.union tempset genset 	
 
@@ -67,27 +67,41 @@ getBexpr2Aexpr (BBrack b) = getBexprAexpr b
 getBexpr2Aexpr (Boolean _) = Set.empty
 
 
-getIdentifiersInSetAexpr :: [Aexpr] -> Set Identifier
-getIdentifiersInSetAexpr [] = Set.empty 
-getIdentifiersInSetAexpr (head:tail) = Set.union (getIdentifiersInAexpr head) (getIdentifiersInSetAexpr tail)
+getIdentifiersInSetAexpr :: [Aexpr] -> DeclList -> Set Identifier
+getIdentifiersInSetAexpr [] _ = Set.empty 
+getIdentifiersInSetAexpr (head:tail) dl = Set.union (getIdentifiersInAexpr head dl) (getIdentifiersInSetAexpr tail dl)
 
-getIdentifiersInAexpr :: Aexpr -> Set Identifier
-getIdentifiersInAexpr (Aexpr1 a1) = getIdentifiersInAexpr1 a1
-getIdentifiersInAexpr (Plus a a1) = Set.union (getIdentifiersInAexpr a) (getIdentifiersInAexpr1 a1)
-getIdentifiersInAexpr (Minus a a1) = Set.union (getIdentifiersInAexpr a) (getIdentifiersInAexpr1 a1)
+getIdentifiersInAexpr :: Aexpr -> DeclList -> Set Identifier
+getIdentifiersInAexpr (Aexpr1 a1) dl = getIdentifiersInAexpr1 a1 dl
+getIdentifiersInAexpr (Plus a a1) dl = Set.union (getIdentifiersInAexpr a dl) (getIdentifiersInAexpr1 a1 dl)
+getIdentifiersInAexpr (Minus a a1) dl = Set.union (getIdentifiersInAexpr a dl) (getIdentifiersInAexpr1 a1 dl)
 
-getIdentifiersInAexpr1 :: Aexpr1 -> Set Identifier
-getIdentifiersInAexpr1 (Aexpr2 a2) = getIdentifiersInAexpr2 a2 
-getIdentifiersInAexpr1 (Mul a1 a2) = Set.union (getIdentifiersInAexpr1 a1) (getIdentifiersInAexpr2 a2)
-getIdentifiersInAexpr1 (Div a1 a2) = Set.union (getIdentifiersInAexpr1 a1) (getIdentifiersInAexpr2 a2)
+getIdentifiersInAexpr1 :: Aexpr1 -> DeclList -> Set Identifier
+getIdentifiersInAexpr1 (Aexpr2 a2) dl = getIdentifiersInAexpr2 a2 dl 
+getIdentifiersInAexpr1 (Mul a1 a2) dl = Set.union (getIdentifiersInAexpr1 a1 dl) (getIdentifiersInAexpr2 a2 dl)
+getIdentifiersInAexpr1 (Div a1 a2) dl = Set.union (getIdentifiersInAexpr1 a1 dl) (getIdentifiersInAexpr2 a2 dl)
 
-getIdentifiersInAexpr2 :: Aexpr2 -> Set Identifier
-getIdentifiersInAexpr2 (Aexpr3 a3) = getIdentifiersInAexpr3 a3
-getIdentifiersInAexpr2 (Neg a3) = getIdentifiersInAexpr3 a3
+getIdentifiersInAexpr2 :: Aexpr2 -> DeclList -> Set Identifier
+getIdentifiersInAexpr2 (Aexpr3 a3) dl = getIdentifiersInAexpr3 a3 dl
+getIdentifiersInAexpr2 (Neg a3) dl = getIdentifiersInAexpr3 a3 dl
 
-getIdentifiersInAexpr3 :: Aexpr3 -> Set Identifier
-getIdentifiersInAexpr3 (Identifier i) = Set.singleton i
-getIdentifiersInAexpr3 (IdentifierArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) = Set.singleton (show(i) ++ "[" ++ show(n) ++ "]") 
-getIdentifiersInAexpr3 (IdentifierArray i a) = Set.union (Set.singleton (i ++ "[-1]")) (getIdentifiersInAexpr a)
-getIdentifiersInAexpr3 (IntegerLiteral _) = Set.empty
-getIdentifiersInAexpr3 (ABrack a) = getIdentifiersInAexpr a
+getIdentifiersInAexpr3 :: Aexpr3 -> DeclList -> Set Identifier
+getIdentifiersInAexpr3 (Identifier i) _ = Set.singleton i
+getIdentifiersInAexpr3 (IdentifierArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) _ = Set.singleton (i ++ "[" ++ show(n) ++ "]") 
+getIdentifiersInAexpr3 (IdentifierArray i a) dl = Set.union a1 a2
+	where
+		arrayBound = getArrayBound dl i		
+		a1 = generateForArray i arrayBound
+		a2 = getIdentifiersInAexpr a dl
+getIdentifiersInAexpr3 (IntegerLiteral _) _ = Set.empty
+getIdentifiersInAexpr3 (ABrack a) dl = getIdentifiersInAexpr a dl
+
+
+
+generateForArray :: Identifier -> Int -> Set Identifier
+generateForArray i (-1) = Set.empty
+generateForArray i n = Set.union (Set.singleton this) rest
+	where
+		
+		this = i ++ "[" ++ show(n) ++ "]"
+		rest = generateForArray i (n-1)

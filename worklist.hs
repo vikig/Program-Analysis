@@ -26,23 +26,23 @@ extractFunction (Just a) = a
 extractFunction _ = ErrorFunct 
 
 -- Applies a function to a node of the flowgraph
-applyFunct :: FlowGraph -> Function -> Analysis -> Label -> Analysis
-applyFunct fg IAFunction (IAanalysis set) l = IAanalysis (exitia fg set l)
-applyFunct fg RDFunction (RDanalysis set) l = RDanalysis (exitrd fg set l)
-applyFunct fg DSFunction (DSanalysis set) l = DSanalysis (exitds fg set l)
-applyFunct fg AEFunction (AEanalysis set) l = AEanalysis (exitae fg set l)
-applyFunct fg LVFunction (LVanalysis set) l = LVanalysis (exitlv fg set l)
-applyFunct _ NoOp a _ = a 
-applyFunct _ _ _ _ = ErrorAnalysis	 		
+applyFunct :: FlowGraph -> Function -> Analysis -> Label -> DeclList -> Analysis
+applyFunct fg IAFunction (IAanalysis set) l _ = IAanalysis (exitia fg set l)
+applyFunct fg RDFunction (RDanalysis set) l _ = RDanalysis (exitrd fg set l)
+applyFunct fg DSFunction (DSanalysis set) l _ = DSanalysis (exitds fg set l)
+applyFunct fg AEFunction (AEanalysis set) l _ = AEanalysis (exitae fg set l)
+applyFunct fg LVFunction (LVanalysis set) l dl = LVanalysis (exitlv fg set l dl)
+applyFunct _ NoOp a _ _ = a 
+applyFunct _ _ _ _ _ = ErrorAnalysis	 		
 
 -- Looks up for the function that applies to the action and then applies this function to it
-applyTransFunct :: Label -> Analysis -> [TransFunct] -> FlowGraph -> Analysis
-applyTransFunct l a transFunct flowGraph = result
+applyTransFunct :: Label -> Analysis -> [TransFunct] -> FlowGraph -> DeclList -> Analysis
+applyTransFunct l a transFunct flowGraph dl = result
 	where
 		(_,_,action,_) = context flowGraph l
 		actionType = getActType action
 		function = extractFunction (lookup actionType transFunct)
-		result = {-trace ("\ncalling with analysis: " ++ show(a) ++", label: " ++ show(l))-} (applyFunct flowGraph function a l)
+		result = {-trace ("\ncalling with analysis: " ++ show(a) ++", label: " ++ show(l))-} (applyFunct flowGraph function a l dl)
 
 -- Used to apply the extremal value to the extremal labels
 applyExtVal :: ExtVal -> [(Node, Action)] -> [Analysis]
@@ -106,25 +106,25 @@ worklistInit ((n,a):tail) extlab extval bottom fg = result
 		result = analysis ++ rest
 
 -- second part of the worklist algorithm, where the actual work is done
-worklistWork :: Worklist -> [Analysis] -> [TransFunct] -> FlowGraph -> [Analysis]
-worklistWork [] analysis _ _ = analysis
-worklistWork ((n1,n2,()):tail) analysis trans fg = newAnalysisList
+worklistWork :: Worklist -> [Analysis] -> [TransFunct] -> FlowGraph -> DeclList -> [Analysis]
+worklistWork [] analysis _ _ _= analysis
+worklistWork ((n1,n2,()):tail) analysis trans fg dl = newAnalysisList
 	where 	a1=analysis!!(n1-1)
 		a2=analysis!!(n2-1)
-		a3=applyTransFunct n1 a1 trans fg
+		a3=applyTransFunct n1 a1 trans fg dl
 		newElement = analysisLUB a2 a3
 		newAnalysis = replaceNth n2 newElement analysis
 		outEdges = out fg n2  				 				
 		newWorklist = Data.List.union outEdges tail	
 		newAnalysisList = if compareAnalysis a3 a2
-					then worklistWork newWorklist newAnalysis trans fg 
-					else worklistWork tail analysis trans fg
+					then worklistWork newWorklist newAnalysis trans fg dl 
+					else worklistWork tail analysis trans fg dl
 	
-getExitAnalysis :: [Label] -> [Analysis] -> [TransFunct] -> FlowGraph -> [Analysis]
+getExitAnalysis :: [Label] -> [Analysis] -> [TransFunct] -> FlowGraph -> DeclList -> [Analysis]
 -- last part of the worklist algorithm, where we apply the exit function to all the entry analysis
-getExitAnalysis [] _ _ _ = []
-getExitAnalysis (x:xs) analysis trans fg = 
+getExitAnalysis [] _ _ _ _ = []
+getExitAnalysis (x:xs) analysis trans fg dl = 
 	let	a1=analysis!!(x-1)
-		a2=applyTransFunct x a1 trans fg
-	in	[a2] ++ (getExitAnalysis xs analysis trans fg) 
+		a2=applyTransFunct x a1 trans fg dl
+	in	[a2] ++ (getExitAnalysis xs analysis trans fg dl) 
 	

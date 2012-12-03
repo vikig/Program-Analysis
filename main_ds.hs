@@ -37,9 +37,9 @@ main = do
 	putStrLn("-----------------------------")		
 	let ianalysis = worklistInit vertexList [1] extval bottom flowGraph
 	putStrLn("\nInitial analysis: \n" ++ (showAnalysis ianalysis 1)) 
-	let fanalysis = worklistWork edgeList ianalysis trans flowGraph
+	let fanalysis = worklistWork edgeList ianalysis trans flowGraph declList
 	putStrLn("\nFinal entry analysis: \n" ++ (showAnalysis fanalysis 1))
-	let fxanalysis = getExitAnalysis (nodes flowGraph) fanalysis trans flowGraph	
+	let fxanalysis = getExitAnalysis (nodes flowGraph) fanalysis trans flowGraph declList	
 	putStrLn("\nFinal exit analysis: \n" ++ (showAnalysis fxanalysis 1))
 	
 	print "done"
