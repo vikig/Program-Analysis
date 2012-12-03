@@ -16,7 +16,7 @@ import Data.Set (Set)
 import Data.List
 import qualified Data.Set as Set
 import Data.Ord
-import System (getArgs)
+import System.Environment (getArgs)
 
 
 main :: IO ()
