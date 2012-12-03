@@ -126,7 +126,7 @@ showSign [] = []
 showSign (Positive:xs) = " +" ++ showSign(xs) 
 showSign (Negative:xs) = " -" ++ showSign(xs)
 showSign (Zero:xs) = " 0" ++ showSign(xs)
-showSign (ErrorSign:xs) = " NAN" ++ showSign(xs)
+showSign (ErrorSign:xs) = " e" ++ showSign(xs)
 
 
 showListAexpr :: [Aexpr] -> String

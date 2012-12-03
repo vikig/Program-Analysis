@@ -1,4 +1,0 @@
-program 
-	int A[3];
-	A[0] := A[i] + A[2];
-end
