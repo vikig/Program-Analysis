@@ -28,7 +28,7 @@ extractFunction _ = ErrorFunct
 -- Applies a function to a node of the flowgraph
 applyFunct :: FlowGraph -> Function -> Analysis -> Label -> DeclList -> Analysis
 applyFunct fg IAFunction (IAanalysis set) l _ = IAanalysis (exitia fg set l)
-applyFunct fg RDFunction (RDanalysis set) l _ = RDanalysis (exitrd fg set l)
+applyFunct fg RDFunction (RDanalysis set) l dl = RDanalysis (exitrd fg set l dl)
 applyFunct fg DSFunction (DSanalysis set) l _ = DSanalysis (exitds fg set l)
 applyFunct fg AEFunction (AEanalysis set) l _ = AEanalysis (exitae fg set l)
 applyFunct fg LVFunction (LVanalysis set) l dl = LVanalysis (exitlv fg set l dl)

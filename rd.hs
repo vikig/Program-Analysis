@@ -99,22 +99,32 @@ killrd vertexList (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n))))) l =
 killrd _ _ _ = Set.empty	
 
 -- the gen function
-genrd :: Action -> Label -> Set (Identifier, Label)
-genrd (Assign i _) l = Set.singleton (i, l)
-genrd (ReadAct i) l = Set.singleton (i, l)
-genrd (ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _) l = Set.singleton (i ++ "[" ++ Prelude.show(n) ++ "]", l)
-genrd (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) l = Set.singleton (i ++ "[" ++ Prelude.show(n) ++ "]", l)
-genrd _ _ = Set.empty
+genrd :: Action -> Label -> DeclList -> Set (Identifier, Label)
+genrd (Assign i _) l _ = Set.singleton (i, l)
+genrd (ReadAct i) l _ = Set.singleton (i, l)
+genrd (ArrayAssign i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) _) l _ = Set.singleton (i ++ "[" ++ Prelude.show(n) ++ "]", l)
+genrd (ArrayAssign i a _) l dl = generateForArray i l arrayBounds
+	where
+		arrayBounds = getArrayBound dl i 		
+genrd (ReadArray i (Aexpr1(Aexpr2(Aexpr3(IntegerLiteral n)))) ) l _ = Set.singleton (i ++ "[" ++ Prelude.show(n) ++ "]", l)
+genrd (ReadArray i a) l dl = generateForArray i l arrayBounds
+	where
+		arrayBounds = getArrayBound dl i
+genrd _ _ _= Set.empty
+
+generateForArray :: Identifier -> Label -> Int -> Set (Identifier,Label)
+generateForArray _ _ (-1) = Set.empty
+generateForArray i l n = Set.union (Set.singleton ((i++"["++show(n)++"]"),l)) (generateForArray i l (n-1)) 
 
 
 --Exit analysis of a label
-exitrd :: FlowGraph -> EntryRD -> Label -> Set (Identifier, Label)
-exitrd fg entryset label = result
+exitrd :: FlowGraph -> EntryRD -> Label -> DeclList -> Set (Identifier, Label)
+exitrd fg entryset label dl = result
 	where 
 		vertexList = labNodes fg		
 		action = extractAction (Prelude.lookup label vertexList)		
 		killset = killrd vertexList action label
-		genset = genrd action label
+		genset = genrd action label dl
 		tempset = Set.difference entryset killset
 		result = Set.union tempset genset 	
 
