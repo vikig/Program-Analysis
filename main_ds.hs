@@ -23,18 +23,19 @@ main = do
 	let declList = getDeclList(parseTree)	
 	let statementList = getStmtList(parseTree)
 	let mergedList = mergeStmtDecl declList statementList  	
-	putStrLn ("\nPARSE TREE: " ++ show(parseTree))
+	putStrLn("\n----------")	
+	putStrLn("FLOW GRAPH")
+	putStrLn("----------")	
 	let (vertexList,edgeList,_) = recursiveFG mergedList [] [] 1 1
 	putStrLn ("\nVERTEX LIST: \n" ++ showVertexList(vertexList))
 	putStrLn ("\nEDGE LIST: \n" ++ show(edgeList))	
 	let flowGraph :: Gr Action () = mkGraph vertexList edgeList    
-	putStrLn("\nFLOW GRAPH: " ++ show(flowGraph))
 	let trans = [(AssignType,DSFunction),(ArrayAssignType,DSFunction),(ReadActType, DSFunction),(ReadArrayType,DSFunction),(SkipType,NoOp),(BooleanActType,NoOp),(WriteActType,DSFunction)]
 	let extval = DSExtVal
 	let bottom = DSanalysis (Set.empty)
 	putStrLn("\n---------------------------")	
 	putStrLn("DETECTION OF SIGNS ANALYSIS")
-	putStrLn("-----------------------------")		
+	putStrLn("---------------------------")		
 	let ianalysis = worklistInit vertexList [1] extval bottom flowGraph
 	putStrLn("\nInitial analysis: \n" ++ (showAnalysis ianalysis 1)) 
 	let fanalysis = worklistWork edgeList ianalysis trans flowGraph declList

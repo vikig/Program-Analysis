@@ -1,0 +1,9 @@
+program
+a:=10;
+x := a+b;
+while(a < 15) do
+a := a+1;
+od
+write(a);
+end
+

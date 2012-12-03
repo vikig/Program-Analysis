@@ -43,9 +43,6 @@ getBexpr2Aexpr (Not b) = getBexprAexpr b
 getBexpr2Aexpr (BBrack b) = getBexprAexpr b
 getBexpr2Aexpr (Boolean _) = Set.empty
 
-
-
-
 getIdentifiersInSetAexpr :: [Aexpr] -> Set Identifier
 getIdentifiersInSetAexpr [] = Set.empty 
 getIdentifiersInSetAexpr (head:tail) = Set.union (getIdentifiersInAexpr head) (getIdentifiersInSetAexpr tail)
@@ -118,8 +115,6 @@ mainSlice fg analysisList (p:tail) ignoreSet = result
 		result = (Data.List.union (Data.List.union thisVertex tailVertex) booleanVertex)
 		--result = (Data.List.union thisVertex tailVertex)
 		
-
-
 getSliceLabels :: VertexList -> Analysis -> Label -> Set Label
 getSliceLabels vertexList (RDanalysis set) pointOfInterest = labelsOfInterest 
 	where
@@ -127,5 +122,3 @@ getSliceLabels vertexList (RDanalysis set) pointOfInterest = labelsOfInterest
 			setAexprOfInterest = getAexprInAction actionOfInterest
 			identifiersOfInterest = {-trace("aexpr of interest " ++ show(setAexprOfInterest))-} (getIdentifiersInSetAexpr (Set.toList setAexprOfInterest))
 			labelsOfInterest = {-trace("id of interest " ++ show(identifiersOfInterest))-} getLabelsOfInterest (Set.toList set) identifiersOfInterest
-
-

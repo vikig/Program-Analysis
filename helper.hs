@@ -101,10 +101,13 @@ showListId (i:tail) = " (" ++ i ++ ")" ++ showListId tail
 
 showListIdLabel :: [(Identifier,Label)] -> String
 showListIdLabel [] = []
+showListIdLabel ((i,(-1)):tail) = " (" ++ i ++ ", ?)" ++ showListIdLabel tail
 showListIdLabel ((i,l):tail) = " (" ++ i ++ ", " ++ show(l) ++ ")" ++ showListIdLabel tail
 
 showListIdInterval :: [(Identifier,(Interval, Interval))] -> String
 showListIdInterval [] = []
+showListIdInterval ((i,(BottomInt,BottomInt)):tail) = " (" ++ i ++ ",BOTTOM)" ++ showListIdInterval tail
+showListIdInterval ((i,(ErrorInterval,ErrorInterval)):tail) = " (" ++ i ++ ",ERROR)" ++ showListIdInterval tail
 showListIdInterval ((i,(z1,z2)):tail) = " (" ++ i ++ ",[" ++ showInterval(z1)++","++ showInterval(z2) ++ "])" ++ showListIdInterval tail
 
 showInterval :: Interval -> String

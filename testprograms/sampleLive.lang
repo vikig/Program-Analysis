@@ -1,0 +1,13 @@
+program
+
+x:=2;
+y:=4;
+x:=1;
+
+while y>x do
+	z:=y;	
+od
+
+x:=z;
+
+end
